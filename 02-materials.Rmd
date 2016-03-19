@@ -1,0 +1,11 @@
+---
+knit: bookdown::preview_chapter
+---
+
+# Materials
+
+We may use this chapter to list software and/or computational requirements, as well as making mention of issues related to image acquisition ( clinical versus  research, etc .)
+
+Alternatively, we might skip this chapter entirely ...
+
+This section should list all buffers, reagents, solutions, etc., that are necessary for carrying out you’re technique. In particular, please stress any requirements relating to storage conditions and stability of solutions (e.g., light sensitive, make fresh as required, store at 4oC, stable at 4°C for up to 2 months, etc.), purity of reagents, etc. Also indicate any reagents that are particularly toxic, any radiation hazards, or special protection that needs to be observed. Do not list standard laboratory apparatus (e.g., centrifuge). Please try to make any sub-headings to this section match the subheadings used in section 3.

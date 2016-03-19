@@ -11,6 +11,8 @@ link-citations: yes
 
 # Abstract
 
+In one or two paragraphs, please write an overview of the method described.
+
 This is a _sample_ book written in **Markdown**. You can use anything that Pandoc's Markdown supports, e.g., a math equation $a^2 + b^2 = c^2$.
 
-**Keywords**: segmentation, convolutional networks, butt, ass
+**Keywords**: segmentation, convolutional networks, butt, ass Please include 5-10 key words for referencing by electronic databases and search engines.
