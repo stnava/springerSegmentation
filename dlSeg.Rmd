@@ -1,0 +1,200 @@
+---
+title: "Convolutional deep learning methods for neuroimage segmentation"
+link-citations: yes
+output: 
+  pdf_document:
+    citation_package: natbib
+    keep_tex: true
+    fig_caption: true
+    latex_engine: pdflatex
+    template: svm-latex-ms.tex
+thanks: "This work was supported by K01 ES025432-01"
+author:
+- name: Nicholas Cullen
+  affiliation: University of Pennsylvania, Philadelphia, PA 19104
+- name: Brian B. Avants
+  affiliation: University of Pennsylvania, Philadelphia, PA 19104
+keywords: "deep learning, segmentation, convolutional, brain, neuroimaging"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+bibliography: dlSeg.bib
+biblio-style: plain
+---
+
+
+# Abstract
+
+Deep learning is a transformative technology in neuroimage analysis.  This general purpose framework is capable of integrating imaging information across both spatial scales and modalities acquired from the human brain.  Furthermore, emerging deep learning software is designed for processing large datasets efficiently.  Complemented with the ability to fuse imaging and non-imaging data, these features make deep learning an integral tool in the future of brain mapping.  Here, we discuss both the context and technology of deep learning and detail the issues of problem definition, network design and evaluation that neuroimaging researchers may encounter.  We will focus primarily on applying convolutional networks to supervised brain segmentation and provide a comparison with joint label fusion, another state of the art method addressing this problem.
+
+# Introduction
+
+This section should contain a summary of, and the outline of any theory to, the method that you’re are describing. It should also outline the major procedures involved in the protocol.
+
+### What is biomedical image segmentation and why is it valuable?
+
+### Traditional approaches to brain segmentation and parcellation
+
+* data
+
+* algorithms
+
+* performance
+
+* limitations
+
+### What is deep learning?
+
+* motivation
+
+* distant and recent history
+
+* meaning of deep
+
+* well-known applications to images and language
+
+* limitations (time, unseen, small datasets, nuisance variables, interpretability)
+    
+### current developments in deep learning
+
+* deep learning applications
+
+* deep learning computational performance and plans
+
+* kaggle
+    
+### DL in brain mapping
+
+* references and examples
+    
+* challenges and future
+
+* possibility for getting discouraged
+
+* kaggle
+
+### DL in brain segmentation
+
+* overview and convolution
+
+* steps involved
+
+* figure showing system
+
+Segmentation is critical to neuroimage quantification.  In the context of brain mapping, the question of where (localization) is as important as quantity.  
+
+image classification 
+
+data science bowl cardiac 
+
+importance of challenges 
+
+imagine the future: cloud-based databases of labeled data that let us ID patterns in medical images
+
+public resources - what tools are needed for this scenario?
+
+* tissue based on intensity 
+
+* learning from training 
+
+* identify networks
+
+* other applications
+
+---- online quality assessment etc to allow rescanning etc
+
+---- longitudinal stability wrt hardware / software upgrades
+
+# MATERIALS
+
+Describe the images and software here [@R-ANTsR] [@HavaeiDavyWarde-FarleyEtAl2017] 
+and [@R-ANTsR; @HavaeiDavyWarde-FarleyEtAl2017] 
+
+* PTBP data - alternative is the neuromorph data
+
+* ANTsR
+
+* Keras, tensorflow
+
+* JLF
+
+* R and python
+
+# METHODS
+
+This is the main section and should explain in detail the individual steps necessary to carry out
+the technique. Where possible, please simply list the steps in numerical order. For techniques
+that comprise a number of separate major procedures, please indicate these separate
+procedures in the introduction, and then subdivide section 3 into subheadings to cover each
+procedure (3.1, 3.2 etc; please avoid any further subdivision of these headings). The steps in
+each subsection should then be numbered individually, renumbering from number one. Do take
+great care to try to indicate any little "tricks" or nuances that help improve your method by
+referring to relevant "notes" in section 4 (see below). This sort of information rarely gets into the
+scientific literature. You may also find it useful to relate to some aspects of the theory in this
+section indicating the purpose of some of the major steps by cross-referencing to an appropriate
+“note”. Do not be tempted to get involved in the description of variations/alternatives to your
+technique in this section: this can be done in the "Notes" section. Stick to the basic procedure
+detailed in this section.
+
+This section must be comprehensive. Do not send the reader away to find information for a
+particular step in another reference. All relevant practical detail must be given in this section
+
+* Collect data and examine
+
+* Define problem and possible solutions
+
+* Create metric for validation
+
+* Divide data into train, test and validate
+
+    * unit tests / sanity checks
+
+* Develop the system: the train / test loop
+
+    * preprocessing
+    
+    * patch or dense
+
+    * network architecture - add nuisance variables?
+    
+    * type of output: classification, probability, etc.
+
+* Validate
+
+* Interpret ( may loop back to system step )
+
+# NOTES
+
+As we all know, even the simplest techniques go wrong from time to time. Would you therefore
+indicate any major problems or faults that can occur with your technique? Try to indicate the
+major sources of problems and how they can be identified and overcome. With reference to
+related techniques, any variations of the technique that you have described should also be made
+in this section, as well as--where relevant--an indication of the sensitivity of the method, timescale
+for the singled technique, etc. This "Notes" section is a hallmark of this series and has been
+singled out for praise by a number of reviewers. Please try and make this section as extensive as
+possible by putting on paper all of your various experiences with the technique. Each ‘Note’
+should be cross-referenced with the ‘Materials’ and ‘Methods’ sections, e.g. (see Note 1).
+
+* Sources of failure:
+
+    * bad optimizer, bad data or bad loss function
+  
+    * bug in coding ( permuting the data )
+
+---- performance relative to other methods - esp on older subjects
+
+* Multiple models and voting if you want to win kaggle (538)
+
+* Benchmark against atropos
+
+* Benchmark against KMeans
+
+* Benchmark against JLF
+
+* how do we "see" the results?
+
+# References
+
+Arabic numbers should be used for text citations (set within parentheses at point of citation), and they should be listed in numerical order in text, as well as in the reference section. Please be as comprehensive as possible with the references.
+
