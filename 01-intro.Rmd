@@ -22,3 +22,34 @@ knitr::kable(head(iris, 20), caption = 'Here is a nice table!', booktabs = TRUE)
 ```
 
 You can write citations, too. For example, we are using the **bookdown** package [@R-bookdown] in this sample book, which was built on top of R Markdown and **knitr** [@xie2015].
+
+
+
+Segmentation is critical to image quantification.  In the context of brain mapping, the question of where (localization) is as important as quantity.  
+
+image classification 
+
+data science bowl cardiac 
+
+importance of challenges 
+
+imagine the future: cloud-based databases of labeled data that let us ID patterns in medical images
+
+public resources - what tools are needed for this scenario?
+
+* tissue based on intensity 
+
+* learning from training 
+
+* identify networks
+
+
+---- like online quality assessment etc to allow rescanning etc
+
+---- longitudinal stability wrt hardware / software upgrades
+
+---- how validate gradient-induced distortion correction?
+
+---- performance relative to other methods - esp on older subjects
+
+
