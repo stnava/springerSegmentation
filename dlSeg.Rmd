@@ -55,7 +55,11 @@ This section should contain a summary of, and the outline of any theory to, the 
 * well-known applications to images and language
 
 * limitations (time, unseen, small datasets, nuisance variables, interpretability)
-    
+
+* ford to combustion, google to deep learning
+
+* as the plane is to the bird, deep learning is to the brain
+
 ### current developments in deep learning
 
 * deep learning applications
@@ -82,29 +86,20 @@ This section should contain a summary of, and the outline of any theory to, the 
 
 * figure showing system
 
-Segmentation is critical to neuroimage quantification.  In the context of brain mapping, the question of where (localization) is as important as quantity.  
-
-image classification 
-
-data science bowl cardiac 
-
-importance of challenges 
-
-imagine the future: cloud-based databases of labeled data that let us ID patterns in medical images
-
-public resources - what tools are needed for this scenario?
-
-* tissue based on intensity 
-
 * learning from training 
-
-* identify networks
 
 * other applications
 
 ---- online quality assessment etc to allow rescanning etc
 
 ---- longitudinal stability wrt hardware / software upgrades
+
+
+Segmentation is critical to neuroimage quantification.  In the context of brain mapping, the question of where (localization) is as important as quantity.  
+
+imagine the future: cloud-based databases of labeled data that let us ID patterns in medical images
+
+public resources - what tools are needed for this scenario?
 
 # MATERIALS
 
@@ -194,6 +189,33 @@ should be cross-referenced with the ‘Materials’ and ‘Methods’ sections, 
 
 * how do we "see" the results?
 
+* tricks:
+    
+    * dropout
+ 
+    * approaches to adding coordinate systems
+    
+    * data augmentation ( rigid, affine, elastic )
+    
+    * L0/L1 regularization
+    
+    * hyperparameter optimization: more complex problems lead to greater parameter complexity
+    
+    * avoid overfitting (e.g. early termination)
+    
+    * find better or more data ( may meet limits of human performance )
+    
+    * batch optimization parameters wrt GPU or CPU capacity
+    
+    * issue: mismatch of test and validation data
+    
+    * issue: unknown nuisance parameters
+    
+    * issue: balanced sampling of classification sets ( randomized, class-specific, etc - avoid dominance by a single class )
+
+    * see kaggle forums for additional details
+
+    * 
 # References
 
 Arabic numbers should be used for text citations (set within parentheses at point of citation), and they should be listed in numerical order in text, as well as in the reference section. Please be as comprehensive as possible with the references.
