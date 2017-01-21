@@ -1,5 +1,5 @@
 ---
-title: "Convolutional deep learning methods for neuroimage segmentation"
+title: "Convolutional neural networks for neuroimage segmentation"
 link-citations: yes
 output: 
   pdf_document:
@@ -26,57 +26,54 @@ biblio-style: plain
 
 # Abstract
 
-Deep learning is a transformative technology in neuroimage analysis.  This general purpose framework is capable of integrating imaging information across both spatial scales and modalities acquired from the human brain.  Furthermore, emerging deep learning software is designed for processing large datasets efficiently.  Complemented with the ability to fuse imaging and non-imaging data, these features make deep learning an integral tool in the future of brain mapping.  Here, we discuss both the context and technology of deep learning and detail the issues of problem definition, network design and evaluation that neuroimaging researchers may encounter.  We will focus primarily on applying convolutional networks to supervised brain segmentation and provide a comparison with joint label fusion, another state of the art method addressing this problem.
+Convolutional neural networks are poised to become a standard technology in neuroimage analysis.  This general purpose framework is capable of integrating imaging information across both spatial scales and modalities acquired from biomedical images.  Furthermore, emerging deep learning software is designed for processing large datasets efficiently.  Complemented with the ability to fuse imaging and non-imaging data, these features make deep learning and convolutional networks an integral tool in the future of brain mapping.  Here, we discuss both the context and technology of deep learning and detail the issues of problem definition, network design and evaluation that neuroimaging researchers may encounter.  We will focus primarily on applying convolutional networks to supervised brain segmentation and provide a comparison with joint label fusion, another state of the art method addressing this problem.
 
 # Introduction
 
-This section should contain a summary of, and the outline of any theory to, the method that you’re are describing. It should also outline the major procedures involved in the protocol.
-
 ### What is biomedical image segmentation and why is it valuable?
+
+Biomedical segmentation annotates raw data with structural or functional context allowing the data to be interpreted statistically and in specific scientific terms.  In the human brain, this may involve very high-resolution labeling of neurons [@FIXME], classification of primary tissue classes from magnetic resonance imaging (MRI), a detailed parcellation [@FIXME] of cortical regions [@FIXME] or even fine-grained localization of hippocampal subfields [@FIXME].  While unsupervised segmentation is highly valuable [@FIXME], supervised approaches seek to directly model expert knowledge. Such methods may automatically reproduce the performance of highly-trained neuroanatomists or diagnosticians at both lower cost and with greater consistency and speed.  A supervised algorithm that performs near expert levels of accuracy allows that expert knowledge to be shared via the combination of software and data.  For instance, the collection of cortical parcellations shared in [@FIXME] are used to reproduce accurate labelings in likely millions of new images by combining this labeled data with computational tools. The parcellations also served as a foundation for several public segmentation challenges [@FIXME], are used to interpret large and heterogenous datasets [@FIXME] and to study longitudinal changes in Alzheimer's disease [@FIXME].  Similarly, a recent segmentation method, LINDA [@FIXME], was trained on an expert neurologist's annotations of post-stroke lesions in T1-weighted neuroimages and shown to provide comparable performance on unseen datasets from other sites.  The model itself is freely available for download and yet does not require the original annotations to be shared. LINDA been used at sites throught the world to consistently reproduce annotations in new datasets. Thus, supervised biomedical segmentation algorithms may be used to store and share rarefied expertise thereby helping to standardize challenging biomedical quantification problems and establish new widely accessible pathways to knowledge [@FIXME; @FIXME].
 
 ### Traditional approaches to brain segmentation and parcellation
 
-* data
+Constantin von Economo's cytoarchitectonic map, a collaborative 13 year effort, is among the most detailed and influential works in quantitative segmentation [@vonEcon].  The datasets of interest to the majority of practictioners today are at a much coarser scale ( approximately 1 millimeter resolution ) but are collected in diverse populations during life.  This presents the opportunity to perform, for the first time in human history, large studies of brain variability and longitudinal change. The relative novelty and prevalence of these (most commonly MRI) data have driven recent technical research into computer-assisted methods for segmentation and, as such, we will briefly summarize relevant algorithms in this context.
 
-* algorithms
+The last two decades of algorithms designed for prior-driven (supervised) brain segmentation fall roughly into *probabilistic*, *multi-atlas* or *machine learning* categories.  The boundaries between these categories are not stark and transition between them also correlates with increasing compute power.  Probabilistic methods, such as those provided by the popular SPM5 package [@FIXME], tend to rely on a single atlas that summarizes population data with spatial probability maps for different anatomical classes.  This era was computationally restricted and waned, more or less, in the second decade of the current millenium.  Around 2010, multi-atlas labeling (MAL) --- which often relies heavily on deformable registration --- emerged as the premier technology for performing brain parcellation in particular when spatial location is highly informative about the class of a given part of the brain [@FIXME].  Rather than averaging expert labels in a common template space before applying to a new brain, MAL propagates the full cohort of labels into each individual image space and performs aggregation within that space.  The best of these methods also incorporate local patch-based similarity between the atlases and the target brain while accounting for redundancy between the atlases [@FIXME].  More recently, machine learning methods have become available that may capture nonlinear and highly multivariate information that may be leveraged to improve segmentation [@FIXME].  Deep learning is in this category and will be discussed below.
 
-* performance
+For problems such as labeling the hippocampus, moving from a single probabilistic atlas to multiple atlas methods led to a nearly 20\% improvement in performance [@WangSuhDasEtAl2013].  As shown within [@MendrikVinckenKuijfEtAl2015], even traditional 3 tissue segmentation in the brain may be improved upwards of 10\% by adopting more recent algorithms.  In more difficult tissue segmentation problems, such as enhancing brain tumors, moving to machine learning methods resulted in improvements on the order of 25\% or more (compare BRATS 2012 performance to more recent results such as [@MenzeJakabBauerEtAl2015] and [@HavaeiDavyWarde-FarleyEtAl2017]).
 
-* limitations
+Despite these advances, there remains the possibility for further improvement in segmentation, in particular as the size of training and "wild-type" datasets grow which will greatly increase the degree of variability to which algorithms must adapt.  The primary limitation of algorithms based on single probabilistic atlases is that they relied heavily on, for instance, Gaussian mixture models to cutomize the priors to individual datasets.   The limitation for MAL may be similar in that they may be limited by design; most MAL methods use assumptions of locality and linearity.  Newer methods, such as deep learning, have the ability to store --- within their own architecture --- a much greater degree of adaptability and nonlinearity than is available from existing labeled datasets alone.
+
+FIXME - need graph showing performance gains in linear vs DL models!!
+
 
 ### What is deep learning?
 
-* motivation
+motivation:  Neural networks are general purpose computational machines with a design inspired by the layered and interconnected cortical columns of the mammalian brain. One may think of these models, in their current incarnation, as mimicking as opposed to reproducing their biological analogue.  As the plane is to the bird, deep learning is to the brain.  
 
-* distant and recent history
+distant and recent history: The idea for neural networks originated in XXX with Hinton (??). ford to combustion, google to deep learning.
 
-* meaning of deep
+see [9 papers in deep learning](https://adeshpande3.github.io/adeshpande3.github.io/The-9-Deep-Learning-Papers-You-Need-To-Know-About.html).
+meaning of deep:  Deep neural networks are neural networks with more than two or three layers.  Truly deep network architectures win the many class ImageNet problem such as AlexNet (8 layers), VGG Net (19 layers), GoogLeNet (22 layers), ResNet (152 layers).  Since 201X, deep learning ImageNet results surpass human performance (5.1\%).
 
-* well-known applications to images and language
+"Stacking all of these layers and adding huge numbers of filters has a computational and memory cost, as well as an increased chance of overfitting"
 
-* limitations (time, unseen, small datasets, nuisance variables, interpretability)
+Deep learning is commonly applied in large-scale annotation of both images and language. 
+In images                 The neural network developed by Krizhevsky, Sutskever, and Hinton in 2012 was the coming out party for CNNs in the computer vision community. This was the first time a model performed so well on a historically difficult ImageNet dataset. Utilizing techniques that are still used today, such as data augmentation and dropout, this paper really illustrated the benefits of CNNs and backed them up with record breaking performance in the competition. In language translation ...
+Most famously, Google Translate's latest incarnation relies on deep neural networks and produced a true paradigm shift in terms of performance.    kaggle.
 
-* ford to combustion, google to deep learning
+Current limitations of deep learning, in particular within the biomedical domain, include the need for relatively large training datasets and the lack of interpretability.  However, substantial progress is being made on both fronts.  Furthermore, deep learning computational performance and plans.
 
-* as the plane is to the bird, deep learning is to the brain
+Convolutional neural networks are becoming increasingly prevalent in the biomedical image analysis literature.  As in computer vision, DL methods winning high profile international challenges.  It is worth noting that this is happening despite the fact that training datasets remain relatively small.  What does this mean?
 
-### current developments in deep learning
+* references and examples: MS, BRATS.
 
-* deep learning applications
+imagine the future: cloud-based databases of labeled data that let us ID patterns in medical images
 
-* deep learning computational performance and plans
+public resources - what tools are needed for this scenario?
 
-* kaggle
     
-### DL in brain mapping
-
-* references and examples
-    
-* challenges and future
-
-* possibility for getting discouraged
-
-* kaggle
+While there are many challenges to broad adoption of this machinery, our belief is that the investments into deep learning infrastructure made by Google, Facebook, Baidu and Microsoft (among others) will only further improve the value of the underlying software [@FIXME].  It is therefore imperative that more scientific investigators --- brain mappers, in particular --- become not only familiar but also facile with deep learning.  Toward that end, will now discuss perhaps the most transparent application for deep learning to a problem that is commonly faced in neuroimaging: tissue segmentation of T1-weighted MRI.
 
 ### DL in brain segmentation
 
@@ -94,12 +91,6 @@ This section should contain a summary of, and the outline of any theory to, the 
 
 ---- longitudinal stability wrt hardware / software upgrades
 
-
-Segmentation is critical to neuroimage quantification.  In the context of brain mapping, the question of where (localization) is as important as quantity.  
-
-imagine the future: cloud-based databases of labeled data that let us ID patterns in medical images
-
-public resources - what tools are needed for this scenario?
 
 # MATERIALS
 
@@ -181,11 +172,11 @@ should be cross-referenced with the ‘Materials’ and ‘Methods’ sections, 
 
 * Multiple models and voting if you want to win kaggle (538)
 
-* Benchmark against atropos
+* Benchmark against atropos: Speed/performance
 
-* Benchmark against KMeans
+* Benchmark against KMeans: Speed/performance
 
-* Benchmark against JLF
+* Benchmark against JLF: Speed/performance
 
 * how do we "see" the results?
 
