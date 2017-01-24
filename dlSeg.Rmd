@@ -13,19 +13,19 @@ author:
 - name: Nicholas Cullen
   affiliation: University of Pennsylvania, Philadelphia, PA 19104
 - name: Brian B. Avants
-  affiliation: University of Pennsylvania, Philadelphia, PA 19104
+  affiliation: University of Pennsylvania, Philadelphia, PA 19104\footnote{B.A. is currently a Biogen employee.}
 keywords: "deep learning, segmentation, convolutional, brain, neuroimaging"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 geometry: margin=1in
 fontfamily: mathpazo
 fontsize: 11pt
 bibliography: dlSeg.bib
-biblio-style: plain
+biblio-style: unsrt
 ---
 
 # Abstract
 
-Convolutional neural networks are poised to become a standard technology in neuroimage analysis.  This general purpose framework is capable of integrating imaging information across both spatial scales and modalities acquired from biomedical images.  Furthermore, emerging deep learning software is designed for processing large datasets efficiently.  Complemented with the ability to fuse imaging and non-imaging data, these features make deep learning and convolutional networks an integral tool in the future of brain mapping.  Here, we discuss both the context and technology of deep learning and detail the issues of problem definition, network design and evaluation that neuroimaging researchers may encounter.  We will focus primarily on applying convolutional-deconvolutional networks to supervised brain segmentation and provide a comparison with joint label fusion, another state of the art method addressing this problem.
+Convolutional neural networks are poised to become a standard technology in neuroimage analysis.  This general purpose framework is capable of integrating imaging information across both spatial scales and modalities acquired from biomedical images.  Furthermore, emerging deep learning software is designed for processing large data sets efficiently.  Complemented with the ability to fuse imaging and non-imaging data, these features make deep learning and convolutional networks an integral tool in the future of brain mapping.  Here, we discuss both the context and technology of deep learning and detail the issues of problem definition, network design and evaluation that neuroimaging researchers may encounter.  We will focus primarily on applying convolutional-deconvolutional networks to supervised brain segmentation and provide a comparison with joint label fusion, another state of the art method addressing this problem.
 
 # Introduction
 
@@ -36,13 +36,14 @@ Convolutional neural networks are poised to become a standard technology in neur
 ### Traditional approaches to brain segmentation and parcellation
 -->
 
-Constantin von Economo's cytoarchitectonic map, a collaborative 13 year effort, is among the most detailed and influential works in quantitative segmentation [@vonEcon].  The datasets of interest to the majority of practictioners today are at a much coarser scale ( approximately 1 millimeter resolution ) but are collected in diverse populations during life.  Contemporary work in biomedical segmentation seeks to automatically annotate such data with structural or functional context.  In the human brain, segmentation may involve very high-resolution labeling of neurons [@FIXME], classification of primary tissue classes from magnetic resonance imaging (MRI), a detailed parcellation [@FIXME] of cortical regions [@FIXME] or even fine-grained localization of hippocampal subfields [@FIXME].  While unsupervised segmentation is highly valuable [@FIXME], supervised approaches seek to directly model expert knowledge. Such methods may automatically reproduce the performance of highly-trained neuroanatomists or diagnosticians at both lower cost and with greater consistency and speed.  A supervised algorithm that performs near expert levels of accuracy allows that expert knowledge to be shared via the combination of software and data.  For instance, the collection of cortical parcellations shared in [@FIXME] are used to reproduce accurate labelings in scores of new images by combining this labeled data with computational tools. The parcellations also serve as a foundation for several public segmentation challenges [@FIXME], aid interpretation of large and heterogenous datasets [@FIXME] as well as longitudinal changes in Alzheimer's disease [@FIXME].  Similarly, a recent segmentation method, LINDA [@FIXME], was trained on an expert neurologist's annotations of post-stroke lesions in T1-weighted neuroimages and shown to provide comparable performance on unseen datasets from other clinical sites. The model itself is freely available for download and yet does not require the original annotations to be shared. Thus, supervised biomedical segmentation algorithms may be used to store and share rarefied expertise thereby helping to standardize challenging biomedical quantification problems and establish new widely accessible pathways to knowledge [@FIXME; @FIXME].  The combination of large datasets and powerful computational methods present the opportunity to perform, for the first time in human history, large studies of brain variability and longitudinal change.
+Constantin von Economo's cytoarchitectonic map, a collaborative 13 year effort, is among the most detailed and influential works in quantitative segmentation [@vonEcon].  The data sets of interest to the majority of practitioners today are at a much coarser scale ( approximately 1 millimeter resolution ) but are collected in diverse populations during life.  Contemporary work in biomedical segmentation seeks to automatically annotate such data with structural or functional context.  In the human brain, segmentation may involve very high-resolution labeling of neurons, classification of primary tissue classes from magnetic resonance imaging (MRI) [@MendrikVinckenKuijfEtAl2015], a detailed parcellation of cortical regions [@TustisonCookKleinEtAl2014] or even fine-grained localization of hippocampal subfields [@WangSuhDasEtAl2013].  While unsupervised segmentation is highly valuable, supervised approaches seek to directly model expert knowledge. Such methods may automatically reproduce the performance of highly-trained neuroanatomists or diagnosticians at both lower cost and with greater consistency and speed.  A supervised algorithm that performs near expert levels of accuracy allows that expert knowledge to be shared via the combination of software and data. <!-- For instance, the collection of cortical parcellations shared in [@FIXME] are used to reproduce accurate labelings in scores of new images by combining this labeled data with computational tools. The parcellations also serve as a foundation for several public segmentation challenges [@FIXME], aid interpretation of large and heterogenous datasets [@FIXME] as well as longitudinal changes in Alzheimer's disease [@FIXME]. --> A recent segmentation method, LINDA [@PustinaCoslettTurkeltaubEtAl2016], was trained on an expert neurologist's annotations of post-stroke lesions in T1-weighted neuroimages and shown to provide comparable performance on unseen data sets from other clinical sites. The model itself is freely available for download and yet does not require the original annotations to be shared. Thus, supervised biomedical segmentation algorithms may be used to store and share rarefied expertise thereby helping to standardize challenging biomedical quantification problems and establish new widely accessible pathways to knowledge.  The combination of large data sets and powerful computational methods present the opportunity to perform, for the first time in human history, large studies of brain variability and longitudinal change.
 
-The last two decades of algorithms designed for prior-driven (supervised) brain segmentation fall roughly into *probabilistic*, *multi-atlas* or *machine learning* categories.  The boundaries between these categories are not stark and transition between them also correlates with increasing compute power.  Probabilistic methods, such as those provided by the popular SPM5 package [@FIXME], tend to rely on a single atlas that summarizes population data with spatial probability maps for different anatomical classes.  This era was computationally restricted and waned, more or less, in the second decade of the current millenium.  Around 2010, multi-atlas labeling (MAL) --- which often relies heavily on deformable registration --- emerged as the premier technology for performing brain parcellation in particular when spatial location is highly informative about the class of a given part of the brain [@FIXME].  Rather than averaging expert labels in a common template space before applying to a new brain, MAL propagates the full cohort of labels into each individual image space and performs aggregation within that space.  The best of these methods also incorporate local patch-based similarity between the atlases and the target brain while accounting for redundancy between the atlases [@FIXME].  More recently, machine learning methods have become available that may capture nonlinear and highly multivariate information that may be leveraged to improve segmentation [@FIXME].  Deep learning is in this category and will be discussed below.
+The last two decades of algorithms designed for prior-driven (supervised) brain segmentation fall roughly into *probabilistic*, *multi-atlas* or *machine learning* categories.  The boundaries between these categories are not stark and transition between them also correlates with increasing compute power.  Probabilistic methods, such as those provided by the popular SPM package [@Ashburner2012], tend to rely on a single atlas that summarizes population data with spatial probability maps for different anatomical classes.  This era was computationally restricted and waned, more or less, in the second decade of the current millennium.  Around 2010, multi-atlas labeling (MAL) --- which often relies heavily on deformable registration --- emerged as the premier technology for performing brain parcellation in particular when spatial location is highly informative about the class of a given part of the brain [@CommowickWarfield2010].  Rather than averaging expert labels in a common template space before applying to a new brain, MAL propagates the full cohort of labels into each individual image space and performs aggregation within that space.  The best of these methods also incorporate local patch-based similarity between the atlases and the target brain while accounting for redundancy between the atlases [@WangSuhDasEtAl2013].  More recently, machine learning methods have become available that may capture nonlinear and highly multivariate information that may be leveraged to improve segmentation [@PustinaCoslettTurkeltaubEtAl2016].  
 
-For problems such as labeling the hippocampus, moving from a single probabilistic atlas to multiple atlas methods led to a nearly 20\% improvement in performance [@WangSuhDasEtAl2013].  As shown within [@MendrikVinckenKuijfEtAl2015], even traditional 3 tissue segmentation in the brain may be improved upwards of 10\% by adopting more recent algorithms.  In more difficult tissue segmentation problems, such as enhancing brain tumors, moving to machine learning methods resulted in improvements on the order of 25\% or more (compare BRATS 2012 performance to more recent results such as [@MenzeJakabBauerEtAl2015] and [@HavaeiDavyWarde-FarleyEtAl2017]).
+<!--
+For problems such as labeling the hippocampus, moving from a single probabilistic atlas to multiple atlas methods led to a nearly 20\% improvement in performance [@WangSuhDasEtAl2013].  As shown within [@MendrikVinckenKuijfEtAl2015], even traditional 3 tissue segmentation in the brain may be improved upwards of 10\% by adopting more recent algorithms.  In more difficult tissue segmentation problems, such as enhancing brain tumors, moving to machine learning methods resulted in improvements on the order of 25\% or more (compare BRATS 2012 performance to more recent results such as [@MenzeJakabBauerEtAl2015] and [@HavaeiDavyWarde-FarleyEtAl2017]). -->
 
-Despite these advances, there remains the possibility for further improvement in segmentation, in particular as the size of training and "wild-type" datasets grow which will greatly increase the degree of variability to which algorithms must adapt.  The primary limitation of algorithms based on single probabilistic atlases is that they relied heavily on, for instance, Gaussian mixture models to cutomize the priors to individual datasets.   The limitation for MAL may be similar in that they may be limited by design: most MAL methods use assumptions of locality and linearity.  Newer methods, such as deep learning, have the ability to store --- within their own architecture --- a much greater degree of adaptability and nonlinearity than is available from existing labeled datasets alone.  Furthermore, deep learning software is built to exploit graphical processing units (GPUs) which may accelerate computations by an order of magnitude or more.
+Despite these advances, there remains the possibility for further improvement in segmentation, in particular as the size of training and "wild-type" data sets grow which will greatly increase the degree of variability to which algorithms must adapt.  The primary limitation of algorithms based on single probabilistic atlases is that they relied heavily on, for instance, Gaussian mixture models to customize the priors to individual data sets.   The limitation for MAL may be similar in that they may be limited by design: most MAL methods use assumptions of locality and linearity.  Newer methods, such as deep learning, have the ability to store --- within their own architecture --- a much greater degree of adaptability and non-linearity than is available from existing labeled data sets alone.  Furthermore, deep learning software is built to exploit graphical processing units (GPUs) which may accelerate computations by an order of magnitude or more.
 
 <!-- FIXME - need graph showing performance gains in linear vs DL models!! -->
 
@@ -51,7 +52,7 @@ Despite these advances, there remains the possibility for further improvement in
 
 Deep learning algorithms link and optimize computational layers in order to build predictive multi-scale data representations.  The design of these general purpose computational machines is inspired by the layered and interconnected cortical columns of the mammalian brain.  An excellent review of the field is available here [@LeCunBengioHinton2015] which describes deep learning as composing multiple simple but non linear modules that, in aggregate, allow very complex functions to be learned.  Some of the more famous examples of deep learning architectures include AlexNet (8 layers), VGG Net (19 layers), GoogLeNet (22 layers) and ResNet (152 layers), all of which pushed the performance envelope in the international ImageNet challenge.  ImageNet winners currently compete with or exceed human performance [@HeZhangRenEtAl2015] on an image-based 1000 class object identification problem, an achievement that is a testament to both decades of prior work as well as the value of public competition, communication and evaluation [@SchoenickClarkTafjordEtAl2016].  
 
-Current limitations of deep learning, in particular within the biomedical domain, include the perceived need for relatively large training datasets and the lack of interpretability.  However, substantial progress is being made on both fronts, i.e. the visualization of deep learning [@MordvintsevOlahTyka2015] as well as practical methods for data augmentation and one-shot learning [@SantoroBartunovBotvinickEtAl2016].  Furthermore, deep learning performance is accelerating with recent substantial investment from industry.  In particular, Google broke new ground in machine translation [@WuSchusterChenEtAl2016] which now approaches human performance in several language pairs. While there are many challenges to broad adoption of this machinery, it is likely that the investments into deep learning infrastructure made by Google, Facebook, Baidu and Microsoft (among others) will only further improve the value of the underlying software [@Goldsborough2016].  It is therefore imperative that more scientific investigators --- brain mappers, in particular --- become not only familiar but also facile with deep learning.  Toward that end, we discuss perhaps the most transparent application for deep learning to a problem that is commonly faced in neuroimaging: tissue segmentation of T1-weighted MRI as in [@TustisonCookKleinEtAl2014].
+Current limitations of deep learning, in particular within the biomedical domain, include the perceived need for relatively large training data sets and the lack of interpretability.  However, substantial progress is being made on both fronts, i.e. the visualization of deep learning [@MordvintsevOlahTyka2015] as well as practical methods for data augmentation and one-shot learning [@SantoroBartunovBotvinickEtAl2016].  Furthermore, deep learning performance is accelerating with recent substantial investment from industry.  In particular, Google broke new ground in machine translation [@WuSchusterChenEtAl2016] which now approaches human performance in several language pairs. While there are many challenges to broad adoption of this machinery, it is likely that the investments into deep learning infrastructure made by Google, Facebook, Baidu and Microsoft (among others) will only further improve the value of the underlying software [@Goldsborough2016].  It is therefore imperative that more scientific investigators --- brain mappers, in particular --- become not only familiar but also facile with deep learning.  Toward that end, we discuss perhaps the most transparent application for deep learning to a problem that is commonly faced in neuroimaging: tissue segmentation of T1-weighted MRI as in [@TustisonCookKleinEtAl2014].
 
 <!-- see [9 papers in deep learning](https://adeshpande3.github.io/adeshpande3.github.io/The-9-Deep-Learning-Papers-You-Need-To-Know-About.html).
 meaning of deep:  Deep neural networks are neural networks with more than two or three layers.  Truly deep network architectures win the many class ImageNet problem such as Since 201X, deep learning ImageNet results surpass human performance (5.1\%).
@@ -80,19 +81,19 @@ https://github.com/songrotek/Deep-Learning-Papers-Reading-Roadmap
 
 Convolutional neural networks have image-specific layers that consist of patch-like "local modules" that act as a set of spatially varying and interconnected feature representations.  Shallow layers typically learn basic features such as edges, while deeper layers begin to aggregate information into more abstract representations.  In the case of object detection, layers may model the class appearance itself [@LeRanzatoMongaEtAl2011]. This ability to represent nonlinear hierarchical *spatially constrained* information is thought to confer performance advantages over more traditional approaches (even non-convolutional networks.) The winning team for a connectomics challenge employed convolutional networks and "had no prior experience with EM [electron microscopic] images"  [@Arganda-CarrerasTuragaBergerEtAl2015], thus showing the power of convolutional networks in combination with well-curated training data in a supervised learning framework. 
 
-Convolutional networks are prevalent in brain segmentation research [@MoeskopsViergeverMendrikEtAl2016; @ZhangLiDengEtAl2015; @ChoiJin2016; @KorfiatisKlineErickson2016; @HavaeiDavyWarde-FarleyEtAl2017; @XingXieYang2016; @KamnitsasLedigNewcombeEtAl2017] and push performance standards in open challenges such as ISLES and BRATS [@KamnitsasLedigNewcombeEtAl2017]. Specifically, deconvolutional architectures [@ZeilerKrishnanTaylorEtAl2010; @ZeilerFergus2014; @NohHongHan2015] reach or exceed state-of-the-art in image segmentation problems in both computer vision and medical imaging.  Importantly, such networks may not need enormous numbers of labeled individual subjects within training datasets in order to achieve clinically valuable results [@BroschTangYooEtAl2016].  This is due to the fact that most neuroimages are, at several scales, highly redundant. That is, even a single image provides a relatively large sampling of variability in the appearance of local anatomy. Convolutional networks transform this structure into a spatially informed set of weight functions or patterns. By exploiting supervision, these expressive multi-scale patterns are *automatically customized* according to the prediction problem at hand.  Thus, a single architecture can be repurposed for many different prediction problems [@JanowczykMadabhushi2016].\footnote{Here, the AlexNet architecture was repurposed very successfully for digital pathology with only small customization in preprocessing and sampling steps.}
+Convolutional networks are prevalent in brain segmentation research [@MoeskopsViergeverMendrikEtAl2016; @ZhangLiDengEtAl2015; @ChoiJin2016; @KorfiatisKlineErickson2016; @HavaeiDavyWarde-FarleyEtAl2017; @XingXieYang2016; @KamnitsasLedigNewcombeEtAl2017] and push performance standards in open challenges such as ISLES and BRATS [@KamnitsasLedigNewcombeEtAl2017]. Specifically, deconvolutional architectures [@ZeilerKrishnanTaylorEtAl2010; @ZeilerFergus2014; @NohHongHan2015] reach or exceed state-of-the-art in image segmentation problems in both computer vision and medical imaging.  Importantly, such networks may not need enormous numbers of labeled individual subjects within training data sets in order to achieve clinically valuable results [@BroschTangYooEtAl2016].  This is due to the fact that most neuroimages are, at several scales, highly redundant. That is, even a single image provides a relatively large sampling of variability in the appearance of local anatomy. Convolutional networks transform this structure into a spatially informed set of weight functions or patterns. By exploiting supervision, these expressive multi-scale patterns are *automatically customized* according to the prediction problem at hand.  Thus, a single architecture can be repurposed for many different prediction problems [@JanowczykMadabhushi2016].\footnote{Here, the AlexNet architecture was repurposed very successfully for digital pathology with only small customization in preprocessing and sampling steps.}
 
 <!-- This, in  part, explains the prominence and successes of patch-based methods in biomedical image processing [@CordierDelingetteAyache2016; @LiuKitschMillerEtAl2016; @KamnitsasLedigNewcombeEtAl2017; @ZhaoWangNiuEtAl2016; @GuoWuCommanderEtAl2014; @MoeskopsViergeverMendrikEtAl2016]. -->
 
 In the remainder of this chapter, we will detail the steps involved in developing a convolutional-deconvolutional network for brain extraction and segmentation.  These steps illustrate the efforts in this particular application's (recent) history but we also reflect on the more general lessons learned in engineering a practical machine learning system.  The typical steps involved in the training and application of convolutional networks to biomedical image segmentation include: 
 
-1. *Data curation:* selection of data that is representative of raw data, $\{ x_i \}$, but also annotated with useful evaluation targets, $\{ y_i \}$; 
+1. *Data curation:* select samples representative of raw data, $\{ x_i \}$, but also annotated with useful evaluation targets, $\{ y_i \}$; 
 
-2. *Problem definition:* specific question that can be answered, given the data, and the associated (2.1) biological and other metrics and (2.2) objective (loss) functions defining the learning problem i.e. $f( x_i ) = y_i$; 
+2. *Problem definition:* determine the specific question that can be answered, given the data, and the associated (2.1) biological and other metrics and (2.2) objective (loss) functions defining the learning problem e.g. $f( x_i ) = y_i$; 
 
 3. *Split data:* divide data into train, test and validation sets perhaps with some effort to balance the categories; 
 
-4. *Redesign/refine:* improve the proposed system(s) with respect to cross-validation performance; Explore (4.1) deep learning architectures; (4.2) alternative optimizers; (4.3) additional pre-processing; (4.4) generalizability via supplemental datasets, if available;
+4. *Redesign/refine:* improve the proposed system(s) with respect to cross-validation performance; Explore (4.1) deep learning architectures; (4.2) alternative optimizers; (4.3) additional pre-processing; (4.4) generalizability via supplemental data sets, if available;
 
 5. *Validate*: apply the system to (5.1) held-out data and, crucially, (5.2) an independent biologically-motivated criterion; 
 
@@ -104,31 +105,51 @@ In the remainder of this chapter, we will detail the steps involved in developin
 # MATERIALS
 
 ```{r demogs,eval=FALSE,echo=FALSE}
-dd=read.csv(".//Cognitive_data/Subject_Information.csv")
-haveImage=rep(NA, nrow( dd ) )
+library( ANTsR )
+dd=read.csv( path.expand( "~/Downloads/dlbs_cogdata/Cognitive_data/Subject_Information.csv" ) ) # available at the link above for cognitive data
+haveImage=rep( NA, nrow( dd ) )
 for ( i in 1:nrow( dd ) ) {
-  ifn = paste("/Users/bavants/Downloads/DLBSsegs/", dd$INDI_ID[i], "*nii.gz", sep='' )
+  ifn = paste( path.expand("~/Downloads/DLBSsegs/"), dd$INDI_ID[i], "*nii.gz", sep='' )
   findimage = Sys.glob( ifn )
-  haveImage[ i ] = length( findimage ) > 0
+  if ( length( findimage ) > 0 ) haveImage[ i ] = findimage
 }
-demog = dd[haveImage,]
+ifn = haveImage[ !is.na( haveImage ) ]
+demog = data.frame( dd[!is.na( haveImage ),], imageFN=ifn )
+segmat = data.frame( matrix( nrow=nrow(demog), ncol=6 ) )
+colnames( segmat ) = c( "CSF", "GM", "WM", "DGM", "BS", "Cerebellum" )
+for ( i in 1:nrow( segmat ) )
+  {
+  seg = antsImageRead( as.character( demog$imageFN[i] ) )
+  segvals = labelStats( seg, seg )[-1,]
+  segmat[i , ] = segvals$Volume
+  }
 for ( nm in colnames( demog )[c(2,4,9)] ) {
   print( paste( nm, mean( demog[,nm] ),  sd( demog[,nm] ) ) )
 }
 for ( nm in colnames( demog )[c(3,8)] ) {
   print( paste( nm ) )
-  print( knitr::kable( table( demog[,nm] )  ) )
+  print( knitr::kable( data.frame( table( demog[,nm] )  ) ) )
 }
+demog2 = cbind( demog, segmat, BV = rowSums( segmat ) )
+demog2$Gender = factor( demog2$Gender )
+print( summary( lm(  Age ~  Gender + CSF + GM + WM + DGM + BS , data = demog2 )  ) )
+mdl = lm( MMSE ~ EducationYears + Gender + CSF + GM + WM + DGM + BS , data = demog2 )
+print( summary( mdl  ) )
+modelOutput = coefficients( summary( mdl ) )
+lmfn = "~/code/writing/springerSegmentation/lmOutput.csv"
+write.csv( modelOutput, path.expand( lmfn ) )
+print( knitr::kable( round( modelOutput[,3:4]*10000)/10000 ) )
 ```
 
 ### Imaging data
 
-We demonstrate our application on the T1-weighted neuroimages collected in the Dallas Lifespan Brain Study (DLBS) available [here](http://fcon_1000.projects.nitrc.org/indi/retro/dlbs.html) and described in [@LuXuRodrigueEtAl2011]. The DLBS MRI dataset includes 275 subjects with 1mm$^3$ T1-weighted MPRAGE SENSE MRI collected on a 3 T Philips Medical
-System machine as described [here](ftp://www.nitrc.org/fcon_1000/htdocs/indi/retro/dlbs_content/dlbs_scan_params_anat.pdf). The scanning session used a whole body coil to transmit the RF excitation and an 8-channel receive head coil with parallel imaging. The cohort subjects have average age 55.25 $\pm$ 20 years (min 20.6, max 89) and includes 107 females and 103 males with mean educational attainment of 16.3 $\pm$ 2.3 years.
+We demonstrate our application on the T1-weighted neuroimages collected in the Dallas Lifespan Brain Study (DLBS) available [here](http://fcon_1000.projects.nitrc.org/indi/retro/dlbs.html) and described in [@LuXuRodrigueEtAl2011]. The cohort subjects have average age 55.2 $\pm$ 20 years (min 20.6, max 89.0) and includes 172 females and 103 males with mean educational attainment of 16.3 $\pm$ 2.30 years. The DLBS MRI data set includes 275 subjects with 1mm$^3$ T1-weighted MPRAGE SENSE MRI collected on a 3 T Philips Medical System machine as described [here](ftp://www.nitrc.org/fcon_1000/htdocs/indi/retro/dlbs_content/dlbs_scan_params_anat.pdf). The scanning session used a whole body coil to transmit the RF excitation and an 8-channel receive head coil with parallel imaging.  We processed each T1 image through the ANTs cortical thickness pipeline leveraging a pre-existing template [@TustisonCookKleinEtAl2014]. 
+
+In order to define ground truth data for the DLBS, we took the six tissue segmentation produced by the pipeline which has been validated with respect to FreeSurfer [@TustisonCookKleinEtAl2014] and other segmentation methods [@AvantsTustisonWuEtAl2011].  This segmentation procedure performs brain extraction followed by tissue segmentation within the brain mask.  The brain masking algorithm involves bias correction, two registration steps, segmentation and morphological operations.  The Atropos segmentation step uses N4 bias field correction [@TustisonAvantsCookEtAl2010] and on the order of 25 iterations of Atropos (depending on convergence speed) which optimizes a Markov Random Field regularized Gaussian mixture model.  In total, these steps may take one to two hours of CPU time, depending on the data, compilation of source code and degree of multi-threading.  Using the final segmentation as ground truth training for our deep learning algorithm enables us to evaluate whether the convolutional-deconvolutional network can learn to reproduce the cumulative output of these complex and time consuming steps in much less computation time.  As we see below, the proposed network indeed can simultaneously perform brain extraction and segmentation in a single shot in very little GPU time.
 
 ### Software
 
-We employ a combination of software in the analyses below include R version 3.3.1 ("Bug in Your Hair") as well as Python version 3.5.0 for basic data organization and processing. We also employ ANTsR version 0.3.3 [@TustisonShrinidhiWintermarkEtAl2015] for core image analysis, data organization and early development efforts. Deep learning software is both well documented and highly optimized for both large datasets (via incremental learning) and modern parallel computation (via graphical processing units --- GPUs) in comparison to other machine learning methodologies.  Our preferred framework is *TensorFlow* which is entering its version 1.0 release which will guarantee backward compatibility.  TensorFlow features many of the latest advances in deep learning research as well as the unique (in current software) ability to distribute problems across multiple CPUs or GPUs on a given machine.  In contrast, Caffe (another leading platform) is currently limited to using a single GPU.  Thus, we recommend TensorFlow as the underlying platform for future deep learning implementations.  TensorFlow is described in [@Goldsborough2016] but check the latest documentation for up to date features. FIXME SAY MORE ABOUT TF HERE - JUST A FEW SENTENCES.  We access TensorFlow via both Python 2.7 and 3.5 in order to guarantee validity of the software across both major versions of Python.  Below, we will compare TensorFlow convolutional networks with Joint Label Fusion (JLF), an established MAL algorithm [@WangSuhDasEtAl2013]. JLF is available in both ANTs [@TustisonCookKleinEtAl2014] and via R-based wrappers in ANTsR [@R-ANTsR].
+We employ a combination of software in the analyses below include R version 3.3.1 ("Bug in Your Hair") as well as Python version 3.5.0 for basic data organization and processing. We also employ ANTsR version 0.3.3 [@TustisonShrinidhiWintermarkEtAl2015] for core image analysis, data organization and early development efforts. Deep learning software is both well documented and highly optimized for both large data sets (via incremental learning) and modern parallel computation (via graphical processing units --- GPUs) in comparison to other machine learning methodologies.  Our preferred framework is *TensorFlow* which is entering its version 1.0 release which will guarantee backward compatibility.  TensorFlow features many of the latest advances in deep learning research as well as the unique (in current software) ability to distribute problems across multiple CPUs or GPUs on a given machine.  In contrast, Caffe (another leading platform) is currently limited to using a single GPU.  Thus, we recommend TensorFlow as the underlying platform for future deep learning implementations.  TensorFlow is described in [@Goldsborough2016] but check the latest documentation for up to date features. FIXME SAY MORE ABOUT TF HERE - JUST A FEW SENTENCES.  We access TensorFlow via both Python 2.7 and 3.5 in order to guarantee validity of the software across both major versions of Python.  Below, we will compare TensorFlow convolutional networks with Joint Label Fusion (JLF), an established MAL algorithm [@WangSuhDasEtAl2013]. JLF is available in both ANTs [@TustisonCookKleinEtAl2014] and via R-based wrappers in ANTsR [@R-ANTsR].
 
 # METHODS
 
@@ -153,7 +174,9 @@ particular step in another reference. All relevant practical detail must be give
 
 ## 1. Data curation
 
-selection of data that is representative of raw data, $\{ x_i \}$, but also annotated with useful evaluation targets, $\{ y_i \}$; 
+The DLBS is a well-curated dataset with no apparent failures or highly aberrent subjects.  The data provides a relatively broad age range, relative to many datasets, and thus tests the ability of the proposed network to perform well in a diverse population.  Furthermore, the dataset is accompanied by demographics data that includes age, gender, educational attainment and scores on the mini mental state exam (MMSE).  These additional variables allow a different look at the validity of the ground truth versus network-produced segmentation values, as discussed in 2.1.
+
+We provide additional notes on data curation in 
 
 ## 2. Problem definition 
 
@@ -164,7 +187,22 @@ Define problem and possible solutions
 
 ### 2.1 biological and other metrics 
 
-and 
+We observe that, within the DLBS cohort, there is a reliable relationship between tissue volumes and the MMSE score.  There is also a significant relationship between tissue volumes and age as well as age and MMSE.  Our evaluation will use tissue volumes as a surrogate measurement for "neurological age" or "brain age" [@FrankeZieglerKloeppelEtAl2010].  Ideally, the convolutional network output will also reproduce this finding with the *predicted* segmentations.  That is, we can run the same regression model as that below but with the convolution network's segmentations (in testing data) replacing the original ground truth segmentation volumes. 
+
+The neurobiologically-motivated regression model (in R sytax) is: 
+
+`mdl = lm( MMSE ~ EducationYears + Gender + CSF + GM + WM + DGM + BS )`
+
+\noindent where `CSF` is cerebrospinal fluid, `GM` is gray matter, `WM` is white matter, `DGM` is deep gray matter and `BS` indicates brain stem.  The output for the training data model is:
+
+```{r mylm,echo=FALSE, results='asis'}
+lmfn = "~/code/writing/springerSegmentation/lmOutput.csv"
+modelOutput = read.csv( path.expand( lmfn ) )
+kk = cbind( modelOutput[,1], round( modelOutput[,4:5]*10000)/10000 )
+colnames( kk ) = c("Variable","T-value","p-value")
+print( knitr::kable(  kk[-1,]  ) )
+```
+
 
 ### 2.3 objective (loss) functions 
 
@@ -197,21 +235,38 @@ improve the proposed system(s) with respect to cross-validation performance;
 
 ### 4.4 generalizability via supplemental datasets, if available;
 
-such datasets do not require labels, if one is able to ...
+such data sets do not require labels, if one is able to ...
 
-## 5. *Validate*: 
+## 5. Validate 
 
 ### 5.1 apply the system to  held-out data and, 
 
 ### 5.2 crucially an independent biologically-motivated criterion; 
 
-## 6. *Interpret* the architecture and outcomes.  
+
+* biological plausibility 
+
+\noindent The output for the predicted data model is:
+
+```{r mylmconv,echo=FALSE, results='asis'}
+lmfn = "~/code/writing/springerSegmentation/lmOutput.csv"
+modelOutput = read.csv( path.expand( lmfn ) )
+kk = cbind( modelOutput[,1], round( modelOutput[,4:5]*10000)/10000 )
+colnames( kk ) = c("Variable","T-value","p-value")
+print( knitr::kable(  kk[-1,]  ) )
+```
+
+\noindent Thus, we see that the neural network leads to a similar finding, as expected if the results are biologically plausible i.e. extract information related to brainAge.
+
+
+## 6. Interpret the architecture and outcomes.  
 
 * independent validation 
 
 * biological plausibility 
 
-* may loop back to system step
+\noindent Thus, we see that the neural network leads to a similar finding, as expected if the results are biologically plausible i.e. extract information related to brainAge.
+
 
 # NOTES
 
@@ -224,6 +279,22 @@ for the singled technique, etc. This "Notes" section is a hallmark of this serie
 singled out for praise by a number of reviewers. Please try and make this section as extensive as
 possible by putting on paper all of your various experiences with the technique. Each ‘Note’
 should be cross-referenced with the ‘Materials’ and ‘Methods’ sections, e.g. (see Note 1).
+
+## 1. Data curation
+
+One of the key issues leading to models that do not generalize is a failure to identify training data that accurately represents variability in data at large.
+
+## 2. Problem definition
+
+
+## 3. Split data
+
+## 4. Redesign/refine
+
+## 5. Validate
+
+## 6. Interpret
+
 
 * Sources of failure:
 
@@ -253,9 +324,9 @@ should be cross-referenced with the ‘Materials’ and ‘Methods’ sections, 
     
     * L0/L1 regularization
     
-    * hyperparameter optimization: more complex problems lead to greater parameter complexity
+    * hyper-parameter optimization: more complex problems lead to greater parameter complexity
     
-    * avoid overfitting (e.g. early termination)
+    * avoid over-fitting (e.g. early termination)
     
     * find better or more data ( may meet limits of human performance )
     
