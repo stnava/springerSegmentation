@@ -87,7 +87,7 @@ In the remainder of this chapter, we will detail the steps involved in developin
 
 3. *Split data:* divide data into train, test and validation sets perhaps with some effort to balance the categories; 
 
-4. *Redesign/refine:* improve the proposed system(s) with respect to cross-validation performance; Explore (4.1) deep learning architectures; (4.2) alternative optimizers; (4.3) additional pre-processing; (4.4) generalizability via supplemental data sets, if available;
+4. *Design/refine:* design and then improve the proposed system(s) with respect to cross-validation performance; Explore (4.1) deep learning architectures; (4.2) alternative optimizers; (4.3) additional pre-processing; (4.4) generalizability via supplemental data sets, if available;
 
 5. *Validate*: apply the system to (5.1) held-out data and, crucially, (5.2) an independent biologically-motivated criterion; 
 
@@ -233,11 +233,13 @@ divide data into train, test and validation sets perhaps with some effort to bal
 
 FIXME REFER TO RELEVANT NOTE
 
-## 4. Redesign/refine 
+## 4. Design/refine 
 
 improve the proposed system(s) with respect to cross-validation performance; 
 
 (see Figure FIXME showing the network architecture)
+
+aggregates of networks to improve results ... eg add probabilities together.
 
 ### 4.1 Explore deep learning architectures; 
 
@@ -272,6 +274,7 @@ FIXME add a figure of HCP example?
 
 * does Dice overlap for CSF, GM or DGM  vary with gender?
 
+* Computation time for the methods
 
 ### 5.2 crucially an independent biologically-motivated criterion; 
 
@@ -287,7 +290,7 @@ print( knitr::kable(  kk[-1,]  ) )
 
 ## 6. Interpret the architecture and outcomes.  
 
-* independent validation 
+* independent validation - results are good and the algorithm is fast.  EXPAND ON THIS.
 
 * biological plausibility 
 
