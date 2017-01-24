@@ -347,7 +347,6 @@ Until network building and design becomes more automated (inevitably), there rem
 
 * Benchmark against JLF: Speed/performance
 
-
 ### Note 5: Deep learning tricks
 
 * dropout
@@ -373,5 +372,9 @@ Until network building and design becomes more automated (inevitably), there rem
 * issue: balanced sampling of classification sets ( randomized, class-specific, etc - avoid dominance by a single class )
 
 * see kaggle forums for additional details
+
+### Note 6: Batch size may impact performance 
+
+This depends on preprocessing - Expand on this!
 
 # References
