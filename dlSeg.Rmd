@@ -77,11 +77,13 @@ https://github.com/songrotek/Deep-Learning-Papers-Reading-Roadmap
 
 ### Convolutional networks and brain segmentation
 
-Convolutional neural networks have image-specific linear or non-linear "local modules" that act as a set of spatially varying and interconnected feature detectors.  Shallow layers typically learn basic features such as edges, while deeper layers begin to aggregate information into more abstract representations.  In the case of object detection, layers may model the class appearance itself [@LeRanzatoMongaEtAl2011]. This ability to represent nonlinear hierarchical *spatially constrained* information is thought to confer performance advantages over more traditional approaches (even non-convolutional networks.) The winning team for a connectomics challenge employed convolutional networks and "had no prior experience with EM [electron microscopic] images"  [@Arganda-CarrerasTuragaBergerEtAl2015], thus showing the power of convolutional networks in combination with well-curated training data in a supervised learning framework. 
+Convolutional neural networks have image-specific layers that consist of patch-like "local modules" that act as a set of spatially varying and interconnected feature representations.  Shallow layers typically learn basic features such as edges, while deeper layers begin to aggregate information into more abstract representations.  In the case of object detection, layers may model the class appearance itself [@LeRanzatoMongaEtAl2011]. This ability to represent nonlinear hierarchical *spatially constrained* information is thought to confer performance advantages over more traditional approaches (even non-convolutional networks.) The winning team for a connectomics challenge employed convolutional networks and "had no prior experience with EM [electron microscopic] images"  [@Arganda-CarrerasTuragaBergerEtAl2015], thus showing the power of convolutional networks in combination with well-curated training data in a supervised learning framework. 
 
-Convolutional networks are prevalent in brain segmentation research [@MoeskopsViergeverMendrikEtAl2016; @ZhangLiDengEtAl2015; @ChoiJin2016; @KorfiatisKlineErickson2016; @HavaeiDavyWarde-FarleyEtAl2017; @XingXieYang2016; @KamnitsasLedigNewcombeEtAl2017] and push performance standards in open challenges such as ISLES and BRATS [@KamnitsasLedigNewcombeEtAl2017]. Specifically, deconvolutional architectures [@ZeilerKrishnanTaylorEtAl2010; @ZeilerFergus2014; @NohHongHan2015] reach or exceed state-of-the-art in image segmentation problems in both computer vision and medical imaging.  Importantly, such networks may not need enormous numbers of labeled individual subjects within training datasets in order to achieve clinically valuable results [@BroschTangYooEtAl2016].  This is, in part, due to the fact that neuroimages are highly redundant, at least from the perspective of tissue segmentation.  That is, even a single image can be thought of as providing a relatively large sampling of variability in the appearance of local anatomy.  This, in  part, explains the prominence and successes of patch-based methods in biomedical image processing [@CordierDelingetteAyache2016; @LiuKitschMillerEtAl2016; @KamnitsasLedigNewcombeEtAl2017; @ZhaoWangNiuEtAl2016; @GuoWuCommanderEtAl2014; @MoeskopsViergeverMendrikEtAl2016].
+Convolutional networks are prevalent in brain segmentation research [@MoeskopsViergeverMendrikEtAl2016; @ZhangLiDengEtAl2015; @ChoiJin2016; @KorfiatisKlineErickson2016; @HavaeiDavyWarde-FarleyEtAl2017; @XingXieYang2016; @KamnitsasLedigNewcombeEtAl2017] and push performance standards in open challenges such as ISLES and BRATS [@KamnitsasLedigNewcombeEtAl2017]. Specifically, deconvolutional architectures [@ZeilerKrishnanTaylorEtAl2010; @ZeilerFergus2014; @NohHongHan2015] reach or exceed state-of-the-art in image segmentation problems in both computer vision and medical imaging.  Importantly, such networks may not need enormous numbers of labeled individual subjects within training datasets in order to achieve clinically valuable results [@BroschTangYooEtAl2016].  This is due to the fact that most neuroimages are, at several scales, highly redundant. That is, even a single image provides a relatively large sampling of variability in the appearance of local anatomy. Convolutional networks transform this structure into a spatially informed set of weight functions or patterns. By exploiting supervision, these expressive multi-scale patterns are *automatically customized* according to the prediction problem at hand.  Thus, a single architecture can be repurposed for many different prediction problems [@JanowczykMadabhushi2016].\footnote{Here, the AlexNet architecture was repurposed very successfully for digital pathology with only small customization in preprocessing and sampling steps.}
 
-In the remainder of this chapter, we will detail the steps involved in developing a convolutional-deconvolutional network for brain extraction and segmentation.  These steps illustrate the efforts in this particular application's (recent) history but we also reflect on the more general lessons learned in engineering a practical machine learning system.  In general, the steps involved in the training and application of convolutional networks to biomedical image segmentation include: (1) *Data curation* i.e. the selection of data that is representative of raw data, $\{ x_i \}$, but also annotated with useful evaluation targets, $\{ y_i \}$; (2) *Problem definition* i.e. the specific question that can be answered, given the data, and the associated metrics and/or objective (loss) functions, $f( x_i ) = y_i$; (3) Divide data into train, test and validation sets perhaps with some effort to balance the categories; (4) Refine the proposed system(s) by cross-validation across the train / test groups; (5) Validate the system; (6) Interpret the architecture and outcomes.  See Figure 1 for an overview of this system.
+<!-- This, in  part, explains the prominence and successes of patch-based methods in biomedical image processing [@CordierDelingetteAyache2016; @LiuKitschMillerEtAl2016; @KamnitsasLedigNewcombeEtAl2017; @ZhaoWangNiuEtAl2016; @GuoWuCommanderEtAl2014; @MoeskopsViergeverMendrikEtAl2016]. -->
+
+In the remainder of this chapter, we will detail the steps involved in developing a convolutional-deconvolutional network for brain extraction and segmentation.  These steps illustrate the efforts in this particular application's (recent) history but we also reflect on the more general lessons learned in engineering a practical machine learning system.  The typical steps involved in the training and application of convolutional networks to biomedical image segmentation include: (1) *Data curation:* selection of data that is representative of raw data, $\{ x_i \}$, but also annotated with useful evaluation targets, $\{ y_i \}$; (2) *Problem definition:* specific question that can be answered, given the data, and the associated biological and other metrics and/or objective (loss) functions defining the learning problem i.e. $f( x_i ) = y_i$; (3) *Split data:* divide data into train, test and validation sets perhaps with some effort to balance the categories; (4) *Redesign/refine:* improve the proposed system(s) with respect to cross-validation performance; (5) *Validate*: apply the system to held-out data and, crucially, an independent biologically-motivated criterion; (6) *Interpret* the architecture and outcomes.  See Figure 1 for an overview of this system.
 
 
 
@@ -91,18 +93,15 @@ FIXME: figure showing system - something like [figure 1 D here](http://msb.embop
 
 # MATERIALS
 
-Describe the images and software here [@R-ANTsR] [@HavaeiDavyWarde-FarleyEtAl2017] 
-and [@R-ANTsR; @HavaeiDavyWarde-FarleyEtAl2017] 
+### Imaging data
 
-* PTBP data - alternative is the neuromorph data
+We demonstrate our application on the T1-weighted neuroimages collected in the Dallas Lifespan Brain Study (DLBS) available [here](www.google.com) and describe in [@DLBS; @DLBS2].
 
-* ANTsR
+### Software
 
-* Keras, tensorflow
+Deep learning software is both well documented and highly optimized for both large datasets (via incremental learning) and modern parallel computation (via graphical processing units --- GPUs) in comparison to other machine learning methodologies.  Our preferred framework is *TensorFlow* which is entering its version 1.0 release which will guarantee backward compatibility.  TensorFlow features many of the latest advances in deep learning research as well as the unique (in current software) ability to distribute problems across multiple CPUs or GPUs on a given machine.  In contrast, CAFFE (another leading platform) is currently limited to using a single GPU.  Thus, we recommend TensorFlow as the underlying platform for future deep learning implementations.  TensorFlow is described in ... but check the latest documentation for up to date features.  We access TensorFlow via both Python 2.7 and 3.x in order to guarantee validity across both major versions of Python.
 
-* JLF
-
-* R and python
+Below, we will compare our convolutional networks with Joint Label Fusion (JLF), an established MAL algorithm [@WangSuhDasEtAl2013]. JLF is available in both ANTs FIXME REF and via R-based wrappers in ANTsR [@R-ANTsR; @HavaeiDavyWarde-FarleyEtAl2017] REF-ANTsR REF-Neuroconductor.  We also employ R [@R-Ref] and ANTsR for basic data organization and early validation efforts.
 
 # METHODS
 
@@ -123,15 +122,19 @@ detailed in this section.
 This section must be comprehensive. Do not send the reader away to find information for a
 particular step in another reference. All relevant practical detail must be given in this section
 
-* Collect data and examine
+### Data curation
 
-* Define problem and possible solutions
+### Problem Definition 
 
-* Create metric for validation
+Define problem and possible solutions
+
+### Split data
 
 * Divide data into train, test and validate
 
-    * unit tests / sanity checks
+* unit tests / sanity checks
+
+### Redesign/refine
 
 * Develop the system: the train / test loop
 
@@ -143,9 +146,15 @@ particular step in another reference. All relevant practical detail must be give
     
     * type of output: classification, probability, etc.
 
-* Validate
+### Validate
 
-* Interpret ( may loop back to system step )
+### Interpret
+
+* independent validation 
+
+* biological plausibility 
+
+* may loop back to system step
 
 # NOTES
 
