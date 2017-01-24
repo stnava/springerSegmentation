@@ -170,6 +170,11 @@ In order to define ground truth data for the DLBS, we took the six tissue segmen
 
 We employ a combination of software in the analyses below include R version 3.3.1 ("Bug in Your Hair") as well as Python version 3.5.0 for basic data organization and processing. We also employ ANTsR version 0.3.3 [@TustisonShrinidhiWintermarkEtAl2015] for core image analysis, data organization and early development efforts. Deep learning software is both well documented and highly optimized for both large data sets (via incremental learning) and modern parallel computation (via graphical processing units --- GPUs) in comparison to other machine learning methodologies.  Our preferred framework is *TensorFlow* which is entering its version 1.0 release which will guarantee backward compatibility.  TensorFlow features many of the latest advances in deep learning research as well as the unique (in current software) ability to distribute problems across multiple CPUs or GPUs on a given machine.  In contrast, Caffe (another leading platform) is currently limited to using a single GPU.  Thus, we recommend TensorFlow as the underlying platform for future deep learning implementations.  TensorFlow is described in [@Goldsborough2016] but check the latest documentation for up to date features. FIXME SAY MORE ABOUT TF HERE - JUST A FEW SENTENCES.  We access TensorFlow via both Python 2.7 and 3.5 in order to guarantee validity of the software across both major versions of Python. <!-- Below, we will compare TensorFlow convolutional networks with Joint Label Fusion (JLF), an established MAL algorithm [@WangSuhDasEtAl2013]. JLF is available in both ANTs [@TustisonCookKleinEtAl2014] and via R-based wrappers in ANTsR [@R-ANTsR]. -->
 
+### Hardware
+
+FIXME --- need to specify details of the GPU in this section
+
+
 # METHODS
 
 <!--This is the main section and should explain in detail the individual steps necessary to carry out
@@ -275,6 +280,9 @@ FIXME add a figure of HCP example?
 * does Dice overlap for CSF, GM or DGM  vary with gender?
 
 * Computation time for the methods
+
+"training takes approximately 16 hours, prediction for a single image takes approximately 18 seconds on the GPU, plus/minus a little depending on the model. I can easily scale that down by using a better architecture."
+
 
 ### 5.2 crucially an independent biologically-motivated criterion; 
 
