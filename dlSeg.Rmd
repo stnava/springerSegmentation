@@ -281,7 +281,7 @@ FIXME add a figure of HCP example?
 
 * Computation time for the methods
 
-"training takes approximately 16 hours, prediction for a single image takes approximately 18 seconds on the GPU, plus/minus a little depending on the model. I can easily scale that down by using a better architecture."
+"training takes approximately 16 hours, prediction for a single image takes approximately 18 seconds on the GPU, plus/minus a little depending on the model. I can easily scale that down by using a better architecture."  FIXME need to know number of training images and architecture used for this ... ie how many networks etc.
 
 
 ### 5.2 crucially an independent biologically-motivated criterion; 
