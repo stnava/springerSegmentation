@@ -30,13 +30,6 @@ Convolutional neural networks are poised to become a standard technology in neur
 
 # Introduction
 
-<!--
-
-### What is biomedical image segmentation and why is it valuable?
-
-### Traditional approaches to brain segmentation and parcellation
--->
-
 Constantin von Economo's cytoarchitectonic map, a collaborative 13 year effort, is among the most detailed and influential works in quantitative segmentation [@vonEcon].  The data sets of interest to the majority of practitioners today are at a much coarser scale ( approximately 1 millimeter resolution ) but are collected in diverse populations during life.  Contemporary work in biomedical segmentation seeks to automatically annotate such data with structural or functional context.  In the human brain, segmentation may involve very high-resolution labeling of neurons, classification of primary tissue classes from magnetic resonance imaging (MRI) [@MendrikVinckenKuijfEtAl2015], a detailed parcellation of cortical regions [@TustisonCookKleinEtAl2014] or even fine-grained localization of hippocampal subfields [@WangSuhDasEtAl2013].  While unsupervised segmentation is highly valuable, supervised approaches seek to directly model expert knowledge. Such methods may automatically reproduce the performance of highly-trained neuroanatomists, diagnosticians or other computational methods at both lower cost and with greater speed.  A supervised algorithm that performs near expert levels of accuracy allows that expert knowledge to be shared via the combination of software and data. <!-- For instance, the collection of cortical parcellations shared in [@FIXME] are used to reproduce accurate labelings in scores of new images by combining this labeled data with computational tools. The parcellations also serve as a foundation for several public segmentation challenges [@FIXME], aid interpretation of large and heterogenous datasets [@FIXME] as well as longitudinal changes in Alzheimer's disease [@FIXME]. --> A recent segmentation method, LINDA [@PustinaCoslettTurkeltaubEtAl2016], was trained on an expert neurologist's annotations of post-stroke lesions in T1-weighted neuroimages and shown to provide comparable performance on unseen data sets from other clinical sites. The model itself is freely available for download and yet does not require the original annotations to be shared. Thus, supervised biomedical segmentation algorithms may be used to store and share rarefied expertise thereby helping to standardize challenging biomedical quantification problems and establish new widely accessible pathways to knowledge.  The combination of large data sets and powerful computational methods present the opportunity to perform, for the first time in human history, large studies of brain variability and longitudinal change.
 
 The last two decades of algorithms designed for prior-driven (supervised) brain segmentation fall roughly into *probabilistic*, *multi-atlas* or *machine learning* categories.  The boundaries between these categories are not stark and transition between them also correlates with increasing compute power.  Probabilistic methods, such as those provided by the popular SPM package [@Ashburner2012], tend to rely on a single atlas that summarizes population data with spatial probability maps for different anatomical classes.  This era was computationally restricted and waned, more or less, in the second decade of the current millennium.  Around 2010, multi-atlas labeling (MAL) --- which often relies heavily on deformable registration --- emerged as the premier technology for performing brain parcellation in particular when spatial location is highly informative about the class of a given part of the brain [@CommowickWarfield2010].  Rather than averaging expert labels in a common template space before applying to a new brain, MAL propagates the full cohort of labels into each individual image space and performs aggregation within that space.  The best of these methods also incorporate local patch-based similarity between the atlases and the target brain while accounting for redundancy between the atlases [@WangSuhDasEtAl2013].  More recently, machine learning methods have become available that may capture nonlinear and highly multivariate information that may be leveraged to improve segmentation [@PustinaCoslettTurkeltaubEtAl2016].  
@@ -223,6 +216,7 @@ kk = cbind( modelOutput[,1], round( modelOutput[,4:5]*10000)/10000 )
 colnames( kk ) = c("Variable","T-value","p-value")
 print( knitr::kable(  kk[-1,]  ) )
 ```
+
 \noindent The data reproducing these findings may be found at the DLBS website and [on Figshare](https://figshare.com/articles/Dallas_lifespan_brain_study_anatomical_segmentations/4573021).
 
 ### 2.3 objective (loss) functions 
@@ -281,10 +275,7 @@ FIXME add a figure of HCP example?
 
 ### 5.2 crucially an independent biologically-motivated criterion; 
 
-
-* biological plausibility 
-
-\noindent The output for the predicted data model is:
+The output for the predicted data model is:
 
 ```{r mylmconv,echo=FALSE, results='asis'}
 lmfn = "~/code/writing/springerSegmentation/lmOutput.csv"
