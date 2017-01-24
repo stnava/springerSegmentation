@@ -85,7 +85,7 @@ In the remainder of this chapter, we will detail the steps involved in developin
 
 2. *Problem definition:* determine the specific question that can be answered, given the data, and the associated (2.1) biological and other metrics and (2.2) objective (loss) functions defining the learning problem e.g. $f( x_i ) = y_i$; 
 
-3. *Split data:* divide data into train, test and validation sets perhaps with some effort to balance the categories; 
+3. *Split data*: divide data into train, test and validation sets perhaps with some effort to balance the categories; 
 
 4. *Design/refine:* design and then improve the proposed system(s) with respect to cross-validation performance; Explore (4.1) deep learning architectures; (4.2) alternative optimizers; (4.3) additional pre-processing; (4.4) generalizability via supplemental data sets, if available;
 
