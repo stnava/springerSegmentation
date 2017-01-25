@@ -320,41 +320,52 @@ We believe that our choice of optimizer and parameter initialization scheme were
 
 ## 3. Training and Validating the Model - Execution Phase
 
-With the data processed, the sampling scheme laid out, and the model architecture in place, we finally started training our models.
+With the data processed, the sampling scheme laid out, and the model architecture in place, we finally started training our models. The general flow of the execution proceeds by fitting the conv-deconv model on the training data, and once that fitting procedure is complete, we evaluate the model fit on a separate held-out validation dataset.
 
+The training procedure consisted of 150 epochs, and for each epoch we sampled 5000 image slices from the subjects in the training set. The image slices were sampled evenly from the subjects, so each subject contributed equally to the model fitting. In order to improve converge -- and also due to computational constraints -- we fit our model using "mini-batches" of data, using a batch size of 30 image slices. Larger batch sizes allow the model to see more variance in the dataset, but at the cost of larger compute time and a higher risk of falling into sub-par local minima from which the model may never recover. Smaller batch sizes -- usually anything less than 30 -- run faster overall and allow the model to escape from bad local minima, with the risk of finding a worse fit in the long run. We found that anything between 20-30 image slices was a good batch size, as it was fast but still led to a good model fit.
+
+Training time took around 5-15 minutes per epoch, leading to total training time of anywhere from 1 to 2 days. This may seem like a large amount of time, but this is a true benefit of the deep learning paradigm. Once the model is trained, it never needs to be updated or trained again. More importantly, predicting on new images is increadibly fast because there is nothing to "learn" from new images. Compare this to traditional approaches, were the segmentation model must start from scratch for each image and the benefit of deep learning approaches becomes clear. 
+
+Training was performed using NVIDIA K20 and K40 GPUs, which represent the state-of-the-art in hardware for training deep neural networks. We note that it would be basically infeasible to train these models on normal CPU computers, or even CPU clusters, as training a single model instantiation would take on the order of weeks. 
+
+### 3.1 determining when to stop training
+After each epoch of model training, we evaluate the model on the held-out, unseen validation dataset. This allows us to determine in real-time when our model is finished training. We know that a model is fully trained when the validation loss no longer decreases or even begins to increase. Because of the nature of gradient descent, the complexity of the convolutional neural network framework, and machine learning in general, the training loss will continually decrease until the model has either completely memorized the training set or the complexity of its representation is fully utilized. Thus, seeing that the loss on the held-out validation set is no longer decreasing is a good sign that the generalizability of the model is no longer increasing and we should stop training. 
+
+The goal during training is to maximize the generalizability of the model, without actually memorizing the training set. Of course, another method for avoiding over-fitting is to simply decrease model complexity by decreasing the number of layers or decreasing the number of kernels.
+
+We also note that training can be heavily affected by the learning rate of the optimizer. The learning rate of the optimizer determines how far of a step to take in the direction of the calculated loss gradient. Too high of a learning rate will cause the model to jump around in the parameter space without ever converging to a solution. A low learning rate, however, will cause the model to stand still. A common method for dealing with this problem is to start with a decently high learning rate and incremently decrease the learning rate. Typically, the learning rate will have some exponential decay factor which decrease it slowly after each epoch, along with a step function which halves the learning rate after a number of epochs. Thankfully, the Adam optimizer is an <i>adaptive</i> learning rate, so it takes care of the considerations on its own. This is a major benefit over Stochastic Gradient Descent.
+
+### 3.2 deciding whether to refine the model
+Once the model is finished training, we again test the model on the validation dataset. If we are "happy" with how the model has fit the held-out validation set -- here, by happy, we mean that the segmentation accuracy on unseen images is nearly perfect -- then we finish the execution phase and move onto model testing. However, it is unlikely that the first machine learning model is the optimal model. In that case, we decide to make systematic changes to our model architecture or optimization procedure, and begin the execution (training and validation) procedure all over again. The refinement process is described in the next section.
 
 FIXME REFER TO RELEVANT NOTE
 
 ## 4. Refining the Model - Refinement Phase
 
-improve the proposed system(s) with respect to cross-validation performance; 
+During the refinement process, we generally take clues from how the execution phase went to determine our next steps. 
 
-(see Figure FIXME showing the network architecture)
+### 4.1 architecture and optimization refinements
+If the training loss was very low but the validation loss was very high, we know that our model over-fit the data by simply memorizing the training set instead of learning generalizable features of brain images. In this case, we decide to decrease model complexity by decreasing the number of layers or decreasing the number of convolutional kernels in each layer. 
 
-aggregates of networks to improve results ... eg add probabilities together.
+On the other hand, if the training loss never seemed to decrease very much, and neither did the validation loss, then we may be certain that our model complexity is not sufficient to learn the non-linear features common to brain images and the segmentation task at hand. When this happened, we increased the number of convolutional kernels in each layer and/or increased the number of convolutional/deconvolutional layers.
 
-### 4.1 Explore deep learning architectures; 
+Another common problem is that the training loss will jump around from very low to very high numbers. As discussed before, this is typically a phenomenon which occurs when the learning rate is too high. In that case, we simply decrease the learning rate and train the model until this no longer occurs.
 
-* patch or dense
+### 4.2 data pre-processing refinements
+It may be the case that none of these model improvments increase the model fit and generalizability. In this case, it is best to look at the steps taken to pre-process the images and ask if there are any improvements to be made here. For instance, we discussed earlier how, although our model still performs well without any pre-processing, processing steps such as N4 bias correction and image normalization greatly improve model fit.
 
-* network architecture - add nuisance variables?
+### 4.3 data augmentation
+It is often the case with deep neural networks, as applied to the medical imaging domain, that over-fitting will almost always occur. This is typically because the datasets are not sufficiently large. As discussed above, convolutional networks typically perform best on computer vision tasks with more than a million available training images. This is a stark contrast to the typical brain imaging datasets, which have only a few hundred images at best. In order to alleviate this issue, we can perform clever data augmentation techniques to get the most out of our data. In the computer vision community, this typically involves applying some affine transform to the image or adding random noise to each mini-batch. 
 
+Our 2D slice sampling technique can be considered a type of data augmentation, since it allows us to extract more than just one individual training image for each subject. However, more sophisticated data augmentation techniques which preserve the task goals but allow us to get the most out of brain images are greatly needed in the medical imaging community. In general, data augmentation should be the first consideration for refining the model when no architectural or optimization refinement helps.
 
-### 4.2 alternative optimizers; 
+### 4.4 unsupervised pre-training and transfer learning
+If no changes to model architecture and optimization procedure lead to better results, and no changes to the data pre-processing or augmentation procedure help, there is only one option - find more data. However, it is not so simple to find a great deal of labelled data which is completely relevant to our task. In our case, there are only so many segmented MRI images publicly available. 
 
-note how choice of softmax impacts optimizer choice
+In this case, unsupervised pre-training is a method which may greatly improve model fit. For unsupervised pre-training, you successively train each layer to learn back a representation of the image input to that layer. We perform this in an iterative fashion, so the first layer learns a lower dimensional representation of the input image, the second layer learns a lower dimensional represetnation of the first layer features, and so on. The benefit of this procedure is that it does not require any labels (i.e. no segmentations), meaning it is completely unsupervised. The justification for this procedure is that by allowing the layers to train as such, they will still learn generalizable, low-level features for brain images. Low-level features, of course, are fairly common across all computer vision tasks -- typically Gabor filters which act as edge detectors -- and it is reasonable to believe that low-level features of brain images are common across tasks as well.
 
-### 4.3 additional pre-processing; 
+Another method which has gained great traction in the computer vision community is <i>transfer learning</i>. With transfer learning, we simply take the early convolutional layers from a model which was trained adequately on a completely different task, and plug those layers into our own model. During the training of our own model, we hold those early layers to be fixed. That is, we do not allow those transferred layers to be altered at all. Again, the idea here is that low-level features should be approximately the same across all tasks, and by utilizing these low-level features we may be able to train a model on much smaller datasets than we otherwise could.
 
-note that N4 is probably wise and intensity scaling / maybe truncation
-
-### 4.4 generalizability via supplemental datasets, if available;
-
-such data sets do not require labels, if one is able to....
-
-note how you tested on HCP data here as another snaity check
-
-FIXME add a figure of HCP example?
 
 ## 5. Testing the Model
 
