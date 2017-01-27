@@ -367,17 +367,31 @@ In this case, unsupervised pre-training is a method which may greatly improve mo
 Another method which has gained great traction in the computer vision community is <i>transfer learning</i>. With transfer learning, we simply take the early convolutional layers from a model which was trained adequately on a completely different task, and plug those layers into our own model. During the training of our own model, we hold those early layers to be fixed. That is, we do not allow those transferred layers to be altered at all. Again, the idea here is that low-level features should be approximately the same across all tasks, and by utilizing these low-level features we may be able to train a model on much smaller datasets than we otherwise could.
 
 
-## 5. Testing the Model
+## 5. Testing Phase
 
-### 5.1 apply the system to  held-out data
+After the refinement phase ended with our identification of a satisfactory set of models as evaluated on the validation dataset, we then moved on to the testing phase. In this phase, we used our ensemble of 2D slice models to fully segment the brain of each subject in the test set. We note again that the model has never seen the images in the test set, nor have the images in the test set played <i>any</i> part in our decisions to alter model structure in the refinement phase. In this sense, the model performance on the test set represents a true unbiased evaluation of generalizability to new data.
 
-* report Dice overlap for tissues in training data and held out validation data
+The testing phase is important because it allows us to determine whether our model is able to perform well on unseen data. The implications for this are important, since our goal is to build a segmentation model which is not only uncannily fast, but is also able to perform accurately and robustly on brain images it has never seen.
+
+### 5.1 3D prediction from an ensemble 2D models
+
+As mentioned above, we trained three separate models to segment brain tissue on 2D slices of the axial, coronal, and saggital axes, respectively. For a single image of size (160, 276, 276), we ran each slice model over each appropriate slice in the image. Since the raw output of the model is really a set of 7 probability maps, we are left with an output of shape (160, 276, 276, 7, 3) for our ensemble model. That is, we now have three sets of probability maps. Combining these probability maps is done using a simple average for each voxel over the three models. This shrinks the output back to size (160, 276, 276, 7). Finally, we perform the <i>argmax</i> operation for each voxel to select the class whose probability value is highest over the set of 7 probability maps. With that, we are now down to a single image whose shape is the same as the ground-truth segmentation model.
+
+For evaluation, we calculated the <i>Dice Coefficient</i> overlap for each tissue in the test image. We report these results here:
+
+<!-- discuss how dice is calculated. report dice coef results. -->
+
+Moreover, we looked at how our predictions -- and the corresponding dice coefficients -- related to the demographic information across subjects:
+
+<!-- 
 
 * does Dice overlap for CSF, GM or DGM vary with age?
 
 * does Dice overlap for CSF, GM or DGM  vary with gender?
+-->
 
-* Computation time for the methods
+Most importantly, we note that it takes the ensemble of models a total of between 15-30 seconds for a single subject. Since the model is already trained, it will <i>always</i> take between 15-30 seconds for any new images. This is a main benefit of prediction, since if we can prove our model generalizes across datasets, then users will have an accurate and fast segmentation model that will apply to any arbitrary dataset.
+
 
 ### 5.2 crucially an independent biologically-motivated criterion; 
 
@@ -391,15 +405,7 @@ colnames( kk ) = c("Variable","T-value","p-value")
 print( knitr::kable(  kk[-1,]  ) )
 ```
 
-## 6. Interpret the architecture and outcomes.  
-
-* independent validation - results are good and the algorithm is fast.  EXPAND ON THIS.
-
-* biological plausibility 
-
-\noindent Thus, we see that the neural network leads to a similar finding, as expected if the results are biologically plausible i.e. extract information related to brainAge.
-
-### 6.1 biologically motivated metrics
+### 5.3 biologically motivated metrics
 <!-- moved from being section 2.1.. didn't think it fit there -->
 We observe that, within the DLBS cohort, there is a reliable relationship between tissue volumes and the MMSE score.  There is also a significant relationship between tissue volumes and age as well as age and MMSE.  Our evaluation will use tissue volumes as a surrogate measurement for "neurological age" or "brain age" [@FrankeZieglerKloeppelEtAl2010].  Ideally, the convolutional network output will also reproduce this finding with the *predicted* segmentations.  That is, we can run the same regression model as that below but with the convolution network's segmentations (in testing data) replacing the original ground truth segmentation volumes. 
 
@@ -419,6 +425,23 @@ print( knitr::kable(  kk[-1,]  ) )
 
 \noindent The data reproducing these findings may be found at the DLBS website and [on Figshare](https://figshare.com/articles/Dallas_lifespan_brain_study_anatomical_segmentations/4573021).
 
+
+## 6. Interpretation Phase 
+
+With a set of test predictions and evaluation metrics, we finally moved on to the interpetation phase. In this phase, we asked oruselves what our evaluation results mean for the general viability of this model.
+
+* independent validation - results are good and the algorithm is fast.  EXPAND ON THIS.
+
+Additionally, we want to discuss our thoughts for why this model performs so well, and why it is biologically plausible. We approached this question from a theoretical and practical standpoint.
+
+* biological plausibility 
+
+\noindent Thus, we see that the neural network leads to a similar finding, as expected if the results are biologically plausible i.e. extract information related to brainAge.
+
+## 7. Distribution Phase
+The finally phase of our work, which we believe to be often overlooked in the development of novel neuroimaging tools, is the <i>distribution phase</i>. In this phase, we packaged our code base into an easy-to-use, flexible, and light-weight package. In fact, our code base can be easily modified to solve <i>any</i> segmentation problem of a similar nature -- from skull stripping, to parcellation, to specific ROI segmentation. This ensures that our model will actually see the light of day in the neuroscience community, since we will be able to solicite feedback on the API, consistently improve model accuracy by incorporating new datasets, and drive research and development in novel convolutional architectures for neuroimgaging segmentation. Our views are consistent with that of the deep learning community, which generally holds that making code and interfaces maximally available (with publishing considerations in mind) to the general community.
+
+<!-- show an example of running an experiment script ?? -->
 
 # NOTES
 
