@@ -172,7 +172,7 @@ We employ a combination of software in the analyses below include R version 3.3.
 
 ### Hardware
 
-FIXME --- need to specify details of the GPU in this section
+We used NVIDIA K40 GPUs for performing this research which retail between $3-4 thousand. Although training deep neural networks with multiple GPUs at once is a highly active area of research at the moment, we trained each model on only one GPU at a time. Training our models on even a cluster of CPUs would be infeasible. While the reliance on GPUs is certainly one drawback of deep learning, we note that this can actually be a good thing for the end-user. Once our model is trained, it will almost never need to be altered again. This is in stark contrast to existing models for tissue segmentation, which must learn from scratch to segment each new image they see. This means that with our model, the computational burden falls on us -- the researchers -- who have access to the expensive equipment required for training deep neural networks. This significantly lessens the computational burden on the end-user, who simply has to run our model on their data. Moreover, this means that our model will operate in a deterministic manner by producing the same result each run -- something that will increase reproducibility of results.
 
 
 # METHODS
@@ -377,9 +377,16 @@ The testing phase is important because it allows us to determine whether our mod
 
 As mentioned above, we trained three separate models to segment brain tissue on 2D slices of the axial, coronal, and saggital axes, respectively. For a single image of size (160, 276, 276), we ran each slice model over each appropriate slice in the image. Since the raw output of the model is really a set of 7 probability maps, we are left with an output of shape (160, 276, 276, 7, 3) for our ensemble model. That is, we now have three sets of probability maps. Combining these probability maps is done using a simple average for each voxel over the three models. This shrinks the output back to size (160, 276, 276, 7). Finally, we perform the <i>argmax</i> operation for each voxel to select the class whose probability value is highest over the set of 7 probability maps. With that, we are now down to a single image whose shape is the same as the ground-truth segmentation model.
 
-For evaluation, we calculated the <i>Dice Coefficient</i> overlap for each tissue in the test image. We report these results here:
+For evaluation, we calculated the <i>Dice Coefficient</i> overlap for each tissue in the test image. The dice coefficient is a measure of classification accuracy for comparing segmentation predictions that takes into account both false positives and true negatives. This measure also weights class accuracy based on the total number of voxels in each class.
 
-<!-- discuss how dice is calculated. report dice coef results. -->
+In all, we achieved the following results:
+
+dice-BG	dice-BS	dice-CRB	dice-CSF	dice-DGM	dice-GM	dice-WM
+0.996869405	0.865623329	0.900790112	0.897214083	0.85578523	0.931399578	0.949728709
+
+<!-- add density plot for the dice coeff distribution for each tissue class? -->
+
+These are quite promising results, considering that we performed minimal pre-preprocessing to the raw data and simulataneously performed skull stripping. Moreover, we employed a minimal number of deep learning "tricks" -- regularization, data augmentation, etc -- on our model which are universally seen in the state-of-the-art models in computer vision tasks.
 
 Moreover, we looked at how our predictions -- and the corresponding dice coefficients -- related to the demographic information across subjects:
 
@@ -390,7 +397,7 @@ Moreover, we looked at how our predictions -- and the corresponding dice coeffic
 * does Dice overlap for CSF, GM or DGM  vary with gender?
 -->
 
-Most importantly, we note that it takes the ensemble of models a total of between 15-30 seconds for a single subject. Since the model is already trained, it will <i>always</i> take between 15-30 seconds for any new images. This is a main benefit of prediction, since if we can prove our model generalizes across datasets, then users will have an accurate and fast segmentation model that will apply to any arbitrary dataset.
+Most importantly, we note that it takes the ensemble of models a total of between 15-20 seconds for a single subject. Since the model is already trained, it will <i>always</i> take between 15-20 seconds for any new images. This is a main benefit of prediction, since if we can prove our model generalizes across datasets, then users will have an accurate and fast segmentation model that will apply to any arbitrary dataset.
 
 
 ### 5.2 crucially an independent biologically-motivated criterion; 
@@ -428,20 +435,15 @@ print( knitr::kable(  kk[-1,]  ) )
 
 ## 6. Interpretation Phase 
 
-With a set of test predictions and evaluation metrics, we finally moved on to the interpetation phase. In this phase, we asked oruselves what our evaluation results mean for the general viability of this model.
+With a set of test predictions and evaluation metrics, we finally moved on to the interpetation phase. In this phase, we asked ourselves what the evaluation results mean for the general viability of this model. In general, our results are quite promising. We certainly demonstrated the viability of deep learning models for a complex tissue segmentation task, giving us confidence that this type of model would work for all types of brain image segmentation tasks.Moreover, our model segmented an entire collection of images in the time typical models would take for a single image. We believe that this fact alone points to deep learning models as the future of brain image segmentation. 
 
-* independent validation - results are good and the algorithm is fast.  EXPAND ON THIS.
-
-Additionally, we want to discuss our thoughts for why this model performs so well, and why it is biologically plausible. We approached this question from a theoretical and practical standpoint.
-
-* biological plausibility 
-
-\noindent Thus, we see that the neural network leads to a similar finding, as expected if the results are biologically plausible i.e. extract information related to brainAge.
+Our use of a large testing set shows that this model can certainly generalize to new images and is not simply memorizing the training set. However, we did not perform any rigorous validation of our model on a completely new dataset. This is certainly future work and is necessary to obtain the confidence of the neuroscience community.
 
 ## 7. Distribution Phase
-The finally phase of our work, which we believe to be often overlooked in the development of novel neuroimaging tools, is the <i>distribution phase</i>. In this phase, we packaged our code base into an easy-to-use, flexible, and light-weight package. In fact, our code base can be easily modified to solve <i>any</i> segmentation problem of a similar nature -- from skull stripping, to parcellation, to specific ROI segmentation. This ensures that our model will actually see the light of day in the neuroscience community, since we will be able to solicite feedback on the API, consistently improve model accuracy by incorporating new datasets, and drive research and development in novel convolutional architectures for neuroimgaging segmentation. Our views are consistent with that of the deep learning community, which generally holds that making code and interfaces maximally available (with publishing considerations in mind) to the general community.
+The final phase of our work, which we believe to be often overlooked in the development of novel neuroimaging tools, is the <i>distribution phase</i>. In this phase, we packaged our code base into an easy-to-use, flexible, and light-weight package. In fact, our code base can be easily modified to solve <i>any</i> segmentation problem of a similar nature -- from skull-stripping, to parcellation, to specific ROI segmentation. This increases the probability that our model and computational framework will see actual usage in the neuroscience community -- something that is quite important to us. 
 
-<!-- show an example of running an experiment script ?? -->
+Our reliance on code distribution ensures that we will be able to solicite feedback on the API, consistently improve model accuracy by incorporating new datasets, and drive research and development in novel convolutional architectures for neuroimgaging segmentation. Our views are consistent with that of the deep learning community, which generally holds that making code and interfaces maximally available (with publishing considerations in mind) to the general community.
+
 
 # NOTES
 
