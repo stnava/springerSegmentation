@@ -1,6 +1,5 @@
 ---
-title: Relating high-dimensional structural networks to resting network connectivity
-  matrices with sparse canonical correlation analysis for neuroimaging
+title: Relating high-dimensional structural networks to resting functional connectivity with sparse canonical correlation analysis for neuroimaging
 author:
 - affiliation: University of Pennsylvania, Philadelphia, PA 19104\footnote{B.A. is
     currently a Biogen employee.}
@@ -49,7 +48,7 @@ where Corr represents Pearson correlation and $x$ and $y$ are the solution vecto
 
 The need to increase interpretability motivates sparse CCA, which allows $x$ and $y$ to have entries which are "mostly zero" and therefore have more specificity.  This is a useful property in neuroscience which seeks to understand the hierarchical and (somewhat) segregated nature of the brain (and focal impact of brain disorders).  Sparse CCA allows one to powerfully address the question of how patterns of variability in cortical structure relate to patterns of resting activity, as measured by functional magnetic resonance imaging. This question is fundamental to understanding not only how structure recapitulates function but also how changes in the organization of the brain may precede the onset of clinical symptoms.  Relatively few studies address the question of how functional connectivity directly associates with cortical (or structural) networks [@Romero-GarciaAtienzaCantero2014; @MarstallerWilliamsRichEtAl2015] where we define a structural network as a set of covarying cortical regions [@KhundrakpamLewisReidEtAl2017].  The relative paucity of studies may relate to the lack of freely available statistical frameworks for addressing this question.
 
-The ability to project large sets of complementary neuroimaging measurements into a low-dimensional and interpretable space is a powerful one for brain mapping. The CCA (and sparse CCA) methodology permits hypotheses about the brain to be framed in new and fundamentally multivariate ways.  As we will see below, with proper constraints, sparse CCA can produce solutions that in some sense capture what we think of as networks: sets of measurements that covary, presumably due to underlying neurobiological mechanisms.  This mitigates several problems:  multiple comparisons correction, perhaps too rigid prior definitions of network characteristics and the need to "translate" artificially independent voxel-based statistical tests into regularized statistical maps (by, for example, cluster constrained post-processing).  Below, we will make these statements specific by employing a public dataset to show how we can employ sparse canonical correlation analysis for neuroimaging (SCCAN) [@AvantsLibonRascovskyEtAl2014] to compute a structure-function basis set by associating whole brain cortical thickness  directly to resting state network correlation matrices.  We use SCCAN to infer the structural patterns that relate to functional connectivity patterns and how these may be used to build an interpretable, predictive regression model (based on multiple neuroimaging modalities) for demographic variables.  We detail elements of the software, visualization, interpretation and  evaluation with reference to the clinical considerations raised by the freely available PREVENT-AD dataset [@OrbanMadjarSavardEtAl2015] on which we focus.
+The ability to project large sets of complementary neuroimaging measurements into a low-dimensional and interpretable space is a powerful one for brain mapping. The CCA (and sparse CCA) methodology permits hypotheses about the brain to be framed in new and fundamentally multivariate ways.  As we will see below, with proper constraints, sparse CCA can produce solutions that in some sense capture what we think of as networks: sets of measurements that covary, presumably due to underlying neurobiological mechanisms.  This mitigates several problems:  multiple comparisons correction, perhaps too rigid prior definitions of network characteristics and the need to "translate" artificially independent voxel-based statistical tests into regularized statistical maps (by, for example, cluster constrained post-processing).  Below, we will make these statements specific by employing a public dataset to show how we can employ sparse canonical correlation analysis for neuroimaging (SCCAN) [@AvantsLibonRascovskyEtAl2014] to compute a structure-function basis set by associating whole brain cortical thickness  directly to resting state network correlation matrices.  We use SCCAN to infer the structural patterns that relate to functional connectivity patterns and how these may be used to build an interpretable, predictive regression model (based on multiple neuroimaging modalities) for demographic variables.  We detail elements of the software, visualization, interpretation and  evaluation with reference to the clinical considerations raised by the freely available Pre-symptomatic Evaluation of Novel or Experimental Treatments for Alzheimer's Disease (PREVENT-AD) dataset [@OrbanMadjarSavardEtAl2015] on which we focus.
 
 
 # Materials
@@ -57,57 +56,45 @@ The ability to project large sets of complementary neuroimaging measurements int
 
 ## Imaging data
 
-We demonstrate our application on the T1-weighted neuroimages collected in the Dallas Lifespan Brain Study (DLBS) available [here](http://fcon_1000.projects.nitrc.org/indi/retro/dlbs.html) and described in [@LuXuRodrigueEtAl2011]. The cohort subjects have average age 55.2 $\pm$ 20 years (min 20.6, max 89.0) and includes 172 females and 103 males with mean educational attainment of 16.3 $\pm$ 2.30 years. The DLBS MRI data set includes 275 subjects with 1mm$^3$ T1-weighted MPRAGE SENSE MRI collected on a 3 T Philips Medical System machine as described [here](ftp://www.nitrc.org/fcon_1000/htdocs/indi/retro/dlbs_content/dlbs_scan_params_anat.pdf). The scanning session used a whole body coil to transmit the RF excitation and an 8-channel receive head coil with parallel imaging.  We processed each T1 image through the ANTs cortical thickness pipeline leveraging a pre-existing template [@TustisonCookKleinEtAl2014]. 
+We demonstrate our application on the T1-weighted and resting state fMRI neuroimages collected in the PREVENT-AD study described in detail in [@OrbanMadjarSavardEtAl2015]. The cohort subjects are cognitively normal with average age 65.4 $\pm$ 6.3 years (min 55.0, max 84.0); PREVENT-AD includes 58 females and 22 males with documented family history of Alzheimer's disease (AD) but with good general health at enrollment.  Subjects will be followed longitudinally to quantify the difference in normal aging and progression to AD in this high-risk group. All 80 subjects are scanned at two different sessions conducted within 111.4 $\pm$ 24.3 days of each other.  Each session includes 1mm$^3$ T1-weighted MRI and resting state functional MRI collected on a 3T Siemens machine as described [@OrbanMadjarSavardEtAl2015].  The resting state fMRI comprises two 5 min 45 second runs within each session.  Due to the relative temporal proximity of the sessions and collection of multiple runs within each session, this dataset presents a valuable opportunity to assess fMRI reliability in this special cohort, as covered in the data source publication.  However, we focus only on the first session data which precedes randomized treatment by Naproxen that could potentially impact the second session data.  
 
-In order to define ground truth data for the DLBS, we took the six tissue segmentation produced by the pipeline which has been validated with respect to FreeSurfer [@TustisonCookKleinEtAl2014] and other segmentation methods [@AvantsTustisonWuEtAl2011].  This segmentation procedure performs brain extraction followed by tissue segmentation within the brain mask.  The brain masking algorithm involves bias correction, two registration steps, segmentation and morphological operations.  The Atropos segmentation step uses N4 bias field correction [@TustisonAvantsCookEtAl2010] and on the order of 25 iterations of Atropos (depending on convergence speed) which optimizes a Markov Random Field regularized Gaussian mixture model.  In total, these steps may take one to two hours of CPU time, depending on the data, compilation of source code and degree of multi-threading.  Using the final segmentation as ground truth training for our deep learning algorithm enables us to evaluate whether the convolutional-deconvolutional network can learn to reproduce the cumulative output of these complex and time consuming steps in much less computation time.  
+### Structural image processing 
+
+We processed each T1 image through the ANTs cortical thickness pipeline [@TustisonCookKleinEtAl2014].  After viewing several example datasets from the PREVENT-AD cohort, we selected the "Oasis" template from [@TustisonCookKleinEtAl2014] due to its similarity in terms of T1 contrast and defacing protocol to PREVENT-AD. ANTs cortical thickness produces a six tissue segmentation which has been validated with respect to FreeSurfer [@TustisonCookKleinEtAl2014] and other segmentation methods [@AvantsTustisonWuEtAl2011].  This segmentation procedure performs brain extraction followed by tissue segmentation within the brain mask.  The brain masking algorithm involves bias correction, two registration steps, segmentation and morphological operations.  The probability maps that emerge from this part of the pipeline are passed to a volumetric, voxel-wise cortical thickness measurement algorithm, DiReCT [@DasAvantsGrossmanEtAl2009].  DiReCT accounts for buried sulci while incorporating tissue-class uncertainties in the thickness estimation step and provides a volumetric alternative that may extract more meaningful variability in comparison to Freesurfer in some cohorts [@TustisonCookKleinEtAl2014].  The thickness data for each subject is transferred to the structural T1 template space.  By masking the thickness data with a group-wise cortical mask, we transform the voxel representation to a matrix represenation. Below, the thickness data will comprise the "left-hand" view in SCCAN, i.e. the $X$ matrix.
+
+### Functional image processing 
+
+We organize our functional image processing strategy around the Power coordinate system [@PowerCohenNelsonEtAl2011] which we will use to generate connectivity matrices of size $270 \times 270$.  The additional two nodes correspond to the left and right head of the hippocampus. Such matrices allow a compressed representation of whole-brain connectivity patterns [@ShirerRyaliRykhlevskaiaEtAl2012] indexed at reliable anatomical coordinates derived from meta-analysis in task studies. We motion correct each run for the baseline session in the PREVENT-AD cohort to a subject-specific, iteratively computed times series mean and collect the final transformation parameters for later analysis as part of quality assurance.  We also compute nuisance variables within non-cortical tissue via CompCor, keeping 10 nuisance predictors as in [@ShirerJiangPriceEtAl2015].  We residualize nuisance variables from the BOLD signal within the cerebrum and compute the pairwise correlation between all Power nodes. We subsequently align the mean resting BOLD image to the individual time point brain extracted T1.  We then map the resting BOLD data to the group space through a composite transformation. Finally, we generate a vector representation of the connection matrix from the upper triangle.  This will, below, enter into $Y$, i.e. the "right hand" matrix in SCCAN.  A subset of individual timepoints of resting state exhibited excessive motion artifact, based on framewise displacement, and were removed from further analysis ($n=$8).  We briefly investigated the reliability of this processing stream and found it to be consistent with results reported in [@OrbanMadjarSavardEtAl2015].
+
 
 
 ## Software
 
-We employ a combination of software in the analyses below include R version 3.3.1 ("Bug in Your Hair") as well as Python version 3.5.0 for basic data organization and processing. We also employ ANTsR version 0.3.3 [@TustisonShrinidhiWintermarkEtAl2015] for core image analysis, data organization and early development efforts. Deep learning software is both well documented and highly optimized for both large data sets (via incremental learning) and modern parallel computation (via graphical processing units --- GPUs) in comparison to other machine learning methodologies.  Our preferred framework is *TensorFlow* which is entering its version 1.0 release which will guarantee backward compatibility.  TensorFlow features many of the latest advances in deep learning research as well as the unique (in current software) ability to distribute problems across multiple CPUs or GPUs on a given machine.  In contrast, Caffe (another leading platform) is currently limited to using a single GPU.  Thus, we recommend TensorFlow as the underlying platform for future deep learning implementations.  TensorFlow is described in [@Goldsborough2016] but check the latest documentation for up to date features. FIXME SAY MORE ABOUT TF HERE - JUST A FEW SENTENCES.  We access TensorFlow via both Python 2.7 and 3.5 in order to guarantee validity of the software across both major versions of Python. 
+We employ R version 3.3.1 ("Bug in Your Hair") for basic statistical processing. We also employ ANTsR version 0.3.3 [@TustisonShrinidhiWintermarkEtAl2015] for core image analysis, data organization and early development efforts.  ANTsR, itself, links to ITKR, ANTs and the ITK toolkits.  The specific versions of each concomitant library is documented within ANTsR software.  However, we note that the only "pure ANTs" tool used in this analysis is well-validated ants cortical thickness pipeline as above.  The remainder of the processing is performed within ANTsR which is available both at [http://stnava.github.io/ANTsR/](http://stnava.github.io/ANTsR/) and via Neuroconductor [https://neuroconductor.org/](https://neuroconductor.org/).  In addition to the PREVENT-AD neuroimaging, experiments in this paper additionally require the `boot` R package.  ANTsR, itself, has several dependencies which are identified at its webpage.
 
+### Toy dataset
 
-The experiments in this paper require the following R packages:
-
-```{r mypkg,echo=FALSE,eval=TRUE}
-library( nabor )  # either this
-library( RANN )   # or this for knn
-library( rflann ) # or the fastest public knn library in R, given multicore computer
-library( ANTsR )  # the wrapper functions
-library( irlba )  # for svd of sparse matrices
-```
-
-in addition to example neuroimaging data available in ANTsR.
-
-### Example dataset
-
-We use, as example, a normalized ( registed to common template space ) structural population dataset available in ANTsR.  By normalizing these brain slices to a common template, we can investigate covariance patterns across the pixel/voxel space.
-
-```{r exampler0,echo=FALSE,eval=TRUE}
+We use, as example, a normalized ( registed to common template space ) structural population dataset available in ANTsR.  By normalizing these brain slices to a common template, we can generate intuition about SCCAN covariance patterns via fast and easy to reproduce examples.  We first define the six subjects and use the first as template.
+```{r exampler0,echo=TRUE,eval=TRUE}
+library( ANTsR )
 fns = c( "r16", "r27", "r30", "r62", "r64", "r85" )
 ref = antsImageRead( getANTsRData( fns[1] ) )
 ```
-
-```{r exampler,echo=FALSE,eval=FALSE}
+\noindent We then deformably register the group to the template and define a brain mask.  We also compute the jacobian determinant and the deformed gradient images to fill in toy $X$ and $Y$ matrices for later use.
+```{r exampler,echo=TRUE,eval=FALSE}
 mask = getMask( ref )
-plot( ref )
-mat = matrix( nrow = length( fns ), ncol = sum( mask ) )
+X = matrix( nrow = length( fns ), ncol = sum( mask ) )
+Y = matrix( nrow = length( fns ), ncol = sum( mask ) )
 for ( i in 1:length( fns ) )
   {
   tar = antsImageRead(  getANTsRData( fns[i] )  )
   reg = antsRegistration( ref, tar, typeofTransform = 'SyN' )
-  smoo = smoothImage( reg$warpedmovout, 2.0 )
-  mat[ i, ] = smoo[ mask == 1 ] / max( smoo )
-  }
+  jac = createJacobianDeterminantImage( ref, reg$fwdtransforms[1], 1 )
+  X[ i, ] = jac[ mask == 1 ]
+  tgr = antsApplyTransforms( ref, iMath( tar, "Grad", 1 ), reg$fwdtransforms )
+  Y[ i, ] = smoothImage( tgr, 1.5 )[ mask == 1 ]
+}
 ```
-
-Look at one of the normalized images.
-
-```{r regres,echo=FALSE,eval=FALSE}
-plot( tar )
-plot( reg$warpedmovout )
-```
-
 
 
 
@@ -126,6 +113,7 @@ $$
 Here, $\gamma_\cdot$ is a scalar weighting term for each variate that controls the impact of the $\ell_1^+$ penalty on the objective function (here denoted $\| \cdot \|^+_1$ ). The $\ell_1^+$ penalty differs from $\ell_1$ in that it sends negative values to zero.  The operator $G^t_{\sigma \cdot}$ performs spatial regularization (usually Gaussian or a modified Gaussian) on the solution vectors $x$ or $y$ where the amount of regularization is determined by $\sigma \cdot$. Much like singular value decomposition (SVD), the resulting subspace encodes a basis that may be used to reconstruct the original dataset. Also, like SVD, multiple solution vectors can be obtained from the above optimization which can be done in parallel or via deflation [@WittenTibshiraniHastie2009]. In comparison to methods which employ standard $\ell_1$ regularization, SCCAN has the benefit of inserting the spatial regularization inside the operator and projecting solutions to the non-negative space.  This means that the resulting solution vectors can be interpreted within the original units of the data i.e. similar to regions of interest.
 
 
+## Example 2D data
 
 ```{r antsrex1,echo=FALSE,eval=TRUE}
 library( ANTsR )
@@ -203,6 +191,10 @@ plot( ref, mimg2, window.overlay=c(overlaymin,1) )
 ```
 
 
+## Structural networks and resting connectivity in PREVENT-AD
+
+Age and cognition impact structural covariance [@FranzmeierBuergerTeipelEtAl2017] as well as resting connectivity [@FranzmeierBuergerTeipelEtAl2017].  If structural covariance also covaries with resting connectivity, then we can exploit SCCAN to identify covarying sub-networks from both types of data that may --- in downstream hypothesis testing --- relate to age, cognition or, potentially, disease status.  We follow a "clustering before hypothesis testing" approach similar to that proposed in eigenanatomy [@] but where the clustering of the data is based on covariation across modalities rather than within a single modality.  
+
 In summary, computing $knn$-sparse covariance matrices enables a natural and fast method for investigating the principal eigenvectors derived from multiscale covariance structure.  In particular, the eigenvectors of such matrices appear to be sparse with non-zero content that increases with $k$.  This leads to a new approach to computing sparse eigenvectors that takes advantage of existing methods for computing fast SVD of sparse matrices and reduces the need for specific optimization algorithms.
 
 We can construct a matrix that is very similar to the $knn$-covariance matrix but includes an additional constraint of physical proximity.  In this case, we can argue that, by construction, the $knn$-spatial-covariance matrix is a sum of sparse and low-rank matrices.  For instance, one element in this sum would be defined by the covariance of the voxels centered at $x_m$ with some given spatial neighborhood radius $r$.
@@ -232,7 +224,25 @@ image( spatrad[ inds, inds ] )
 
 ## Note 1
 
-You can use a full mask which reduces one concern but may add computation time
+Scaling the matrix inputs is a critical decision.  
+
+* No scaling
+
+```{r nosc}
+```
+
+
+* Centering:
+
+```{r conly}
+```
+
+* Centering and scaling:
+
+```{r cands}
+```
+
+Each case ...
 
 ## Note 2
 
@@ -240,10 +250,14 @@ investigate i.e. visualize the candidate hypotheses.  in our example above, the 
 
 ## Note 3
 
-Permutation is, at times, recommended for evaluating significance [@Witten].  However, in our experience this may be anti-conservative in $p >> n$ datasets.  An effective alternative is to employ cross-validation of the correlation with permutation.  That is, rather than asking "how well do these correlation hold up under permutation?", one might ask "how does cross-validation performance change between real and permuted data"?  This latter strategy may be more informative and stable in smaller datasets.
+Permutation is, at times, recommended for evaluating significance [@WittenTibshiraniHastie2009].  However, in our experience this may be anti-conservative in $p >> n$ datasets.  An effective alternative is to employ cross-validation of the correlation with permutation.  That is, rather than asking "how well do these correlation hold up under permutation?", one might ask "how does cross-validation performance change between real and permuted data"?  This latter strategy may be more informative and stable in smaller datasets.
 
 ## Note 4
 
-Robust data transformations can address the sensitivity of correlation-based analyses to outliers.  ANTsR provides a function `robustMatrixTransform` which transforms each data-point by a rank transform
+Robust data transformations can address the sensitivity of correlation-based analyses to outliers [@WilmsCroux2016].  ANTsR provides a function `robustMatrixTransform` which transforms each data-point by a rank transform and thus acts as a general purpose and easy to use safeguard against such issues (although we note that careful data inspection is always a superior approach).  Referring back to our example dataset, we can see how this option can be used:
+
+
+```{r myrob}
+```
 
 # References
