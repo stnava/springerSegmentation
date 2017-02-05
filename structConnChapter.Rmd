@@ -1,26 +1,115 @@
 ---
-title: "Single and multi-subject connectivity methods for scalar MRI"
-author: "Brian B. Avants"
-date: "`r Sys.Date()`"
-output: pdf_document
+title: Relating high-dimensional structural networks to resting network connectivity
+  matrices with sparse canonical correlation analysis for neuroimaging
+author:
+- affiliation: University of Pennsylvania, Philadelphia, PA 19104\footnote{B.A. is
+    currently a Biogen employee.}
+  name: Brian B. Avants
+csl: springerprotocols.csl
+output:
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: pdflatex
+    template: svm-latex-ms.tex
+  html_document: default
+fontsize: 11pt
+geometry: margin=1in
+keywords: dimensionality reduction, sparse canonical correlation analysis, sccan,
+  eigenanatomy, brain, neuroimaging, resting state, network
+link-citations: yes
+fontfamily: mathpazo
+thanks: This work was supported by K01 ES025432-01
+bibliography: cca.bib
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 
 # Abstract
 
-In one or two paragraphs, please write an overview of the method described.
+<!-- In one or two paragraphs, please write an overview of the method described. -->
 
-This is a _sample_ book written in **Markdown**. You can use anything that Pandoc's Markdown supports, e.g., a math equation $a^2 + b^2 = c^2$.
-
-**Keywords**: segmentation, convolutional networks, butt, ass Please include 5-10 key words for referencing by electronic databases and search engines.
+Human brain mapping is increasingly faced with the need to relate multiple small sample size, but high-dimensional ("short and wide") datasets.  Exploratory analysis of such data often targets questions regarding network dysfunction in populations for which there is relatively little prior work.  The questions that one may address with such high-dimensional data may relate to traditional "small" measurements such as age, a specific cognitive variable or a risk penotype.  We overview how to use sparse canonical correlation analysis to produce biologically principled low-dimensional representations before proceeding to hypothesis testing, an approach which conserves power by taking advantage of the underlying neurobiological covariation.  We provide an example that maps voxel-wise cortical thickness measurements to resting state network correlations in order to identify structure-function sub-networks with very little further supervision.  The resulting network-like, sparse basis functions allow one to predict traditional univariate outcomes from multiple neuroimaging modalities even when sample sizes are relatively small.
 
 
 # Introduction
 
-This section should contain a summary of, and the outline of any theory to, the method that you’re are describing. It should also outline the major procedures involved in the protocol.
+<!-- This section should contain a summary of, and the outline of any theory to, the method that you’re are describing. It should also outline the major procedures involved in the protocol.-->
+
+Sparse canonical correlation analysis is gaining popularity within biomedical analysis as a tool for handling multiview high-dimensional datasets [@WittenTibshiraniHastie2009; @AvantsCookUngarEtAl2010; @AvantsCookMcMillanEtAl2010; @ChaliseBatzlerAboEtAl2012; @DudaDetreKimEtAl2013; @LinCalhounWang2014; @AvantsLibonRascovskyEtAl2014; @FangLinSchulzEtAl2016; @DuHuangYanEtAl2016].  Perhaps the first effort to extend Hotelling's original work [@hotelling1936relations] to sparse solutions involved relating specific words within musical annotations directly to specific sounds [@torres2007finding] by adding $\ell_1$ regularization. More recently, the method is gaining traction in imaging genomics to relate imaging phenotypes to genotype, potentially by taking advantage of prior knowledge in the form of structured sparsity [@DuHuangYanEtAl2016]. 
+
+Despite these new applications, the advantages of CCA remain the same today as in 1936: CCA allows one to symmetrically relate sets of variables to each other.  Specifically, consider two matrices, $X$ (dimension $n \times p$ ) and $Y$ (dimension $n \times q$).  If we want a direct univariate comparison between the columns of these matrices, then we would have to perform on the order of $p \times q$ pairwise calculations.  Clearly, if $p$ and $q$ are large (e.g. greater than several thousand), then this results in a very large computational burden.  Becausing neuroimaging information is often highly redundant, this univariate comparison forces many more individual comparisons than should be necessary to gain an understanding of the robustness of the relationship between these measurements.  In contrast, CCA can make this comparison with a single multivariate calculation that maximizes:
+$$
+x^\star, y^\star = argmax_{x,y} ~~Corr( X u, Y v ) 
+$$
+where Corr represents Pearson correlation and $x$ and $y$ are the solution vectors (or matrices if we are computing multiple canonical variates.)  The variables $x$ and $y$ project $X$ and $Y$ into two $n \times 1$ vectors.  While it is clear that the directly multivariate approach gains power by avoiding multiple comparisons, one compromises interpretability.  That is, the factors that traditional CCA produces are dense.  In analogy to linear regression, the "$\beta$ weights" are non-zero on both sides of the equation.  
+
+The need to increase interpretability motivates sparse CCA, which allows $x$ and $y$ to have entries which are "mostly zero" and therefore have more specificity.  This is a useful property in neuroscience which seeks to understand the hierarchical and (somewhat) segregated nature of the brain (and focal impact of brain disorders).  Sparse CCA allows one to powerfully address the question of how patterns of variability in cortical structure relate to patterns of resting activity, as measured by functional magnetic resonance imaging. This question is fundamental to understanding not only how structure recapitulates function but also how changes in the organization of the brain may precede the onset of clinical symptoms.  Relatively few studies address the question of how functional connectivity directly associates with cortical (or structural) networks [@Romero-GarciaAtienzaCantero2014; @MarstallerWilliamsRichEtAl2015] where we define a structural network as a set of covarying cortical regions [@KhundrakpamLewisReidEtAl2017].  The relative paucity of studies may relate to the lack of freely available statistical frameworks for addressing this question.
+
+The ability to project large sets of complementary neuroimaging measurements into a low-dimensional and interpretable space is a powerful one for brain mapping. The CCA (and sparse CCA) methodology permits hypotheses about the brain to be framed in new and fundamentally multivariate ways.  As we will see below, with proper constraints, sparse CCA can produce solutions that in some sense capture what we think of as networks: sets of measurements that covary, presumably due to underlying neurobiological mechanisms.  This mitigates several problems:  multiple comparisons correction, perhaps too rigid prior definitions of network characteristics and the need to "translate" artificially independent voxel-based statistical tests into regularized statistical maps (by, for example, cluster constrained post-processing).  Below, we will make these statements specific by employing a public dataset to show how we can employ sparse canonical correlation analysis for neuroimaging (SCCAN) [@AvantsLibonRascovskyEtAl2014] to compute a structure-function basis set by associating whole brain cortical thickness  directly to resting state network correlation matrices.  We use SCCAN to infer the structural patterns that relate to functional connectivity patterns and how these may be used to build an interpretable, predictive regression model (based on multiple neuroimaging modalities) for demographic variables.  We detail elements of the software, visualization, interpretation and  evaluation with reference to the clinical considerations raised by the freely available PREVENT-AD dataset [@OrbanMadjarSavardEtAl2015] on which we focus.
+
 
 # Materials
 
-This section should list all buffers, reagents, solutions, etc., that are necessary for carrying out you’re technique. In particular, please stress any requirements relating to storage conditions and stability of solutions (e.g., light sensitive, make fresh as required, store at 4oC, stable at 4°C for up to 2 months, etc.), purity of reagents, etc. Also indicate any reagents that are particularly toxic, any radiation hazards, or special protection that needs to be observed. Do not list standard laboratory apparatus (e.g., centrifuge). Please try to make any sub-headings to this section match the subheadings used in section 3.
+
+## Imaging data
+
+We demonstrate our application on the T1-weighted neuroimages collected in the Dallas Lifespan Brain Study (DLBS) available [here](http://fcon_1000.projects.nitrc.org/indi/retro/dlbs.html) and described in [@LuXuRodrigueEtAl2011]. The cohort subjects have average age 55.2 $\pm$ 20 years (min 20.6, max 89.0) and includes 172 females and 103 males with mean educational attainment of 16.3 $\pm$ 2.30 years. The DLBS MRI data set includes 275 subjects with 1mm$^3$ T1-weighted MPRAGE SENSE MRI collected on a 3 T Philips Medical System machine as described [here](ftp://www.nitrc.org/fcon_1000/htdocs/indi/retro/dlbs_content/dlbs_scan_params_anat.pdf). The scanning session used a whole body coil to transmit the RF excitation and an 8-channel receive head coil with parallel imaging.  We processed each T1 image through the ANTs cortical thickness pipeline leveraging a pre-existing template [@TustisonCookKleinEtAl2014]. 
+
+In order to define ground truth data for the DLBS, we took the six tissue segmentation produced by the pipeline which has been validated with respect to FreeSurfer [@TustisonCookKleinEtAl2014] and other segmentation methods [@AvantsTustisonWuEtAl2011].  This segmentation procedure performs brain extraction followed by tissue segmentation within the brain mask.  The brain masking algorithm involves bias correction, two registration steps, segmentation and morphological operations.  The Atropos segmentation step uses N4 bias field correction [@TustisonAvantsCookEtAl2010] and on the order of 25 iterations of Atropos (depending on convergence speed) which optimizes a Markov Random Field regularized Gaussian mixture model.  In total, these steps may take one to two hours of CPU time, depending on the data, compilation of source code and degree of multi-threading.  Using the final segmentation as ground truth training for our deep learning algorithm enables us to evaluate whether the convolutional-deconvolutional network can learn to reproduce the cumulative output of these complex and time consuming steps in much less computation time.  
+
+
+## Software
+
+We employ a combination of software in the analyses below include R version 3.3.1 ("Bug in Your Hair") as well as Python version 3.5.0 for basic data organization and processing. We also employ ANTsR version 0.3.3 [@TustisonShrinidhiWintermarkEtAl2015] for core image analysis, data organization and early development efforts. Deep learning software is both well documented and highly optimized for both large data sets (via incremental learning) and modern parallel computation (via graphical processing units --- GPUs) in comparison to other machine learning methodologies.  Our preferred framework is *TensorFlow* which is entering its version 1.0 release which will guarantee backward compatibility.  TensorFlow features many of the latest advances in deep learning research as well as the unique (in current software) ability to distribute problems across multiple CPUs or GPUs on a given machine.  In contrast, Caffe (another leading platform) is currently limited to using a single GPU.  Thus, we recommend TensorFlow as the underlying platform for future deep learning implementations.  TensorFlow is described in [@Goldsborough2016] but check the latest documentation for up to date features. FIXME SAY MORE ABOUT TF HERE - JUST A FEW SENTENCES.  We access TensorFlow via both Python 2.7 and 3.5 in order to guarantee validity of the software across both major versions of Python. 
+
+
+The experiments in this paper require the following R packages:
+
+```{r mypkg,echo=FALSE,eval=TRUE}
+library( nabor )  # either this
+library( RANN )   # or this for knn
+library( rflann ) # or the fastest public knn library in R, given multicore computer
+library( ANTsR )  # the wrapper functions
+library( irlba )  # for svd of sparse matrices
+```
+
+in addition to example neuroimaging data available in ANTsR.
+
+### Example dataset
+
+We use, as example, a normalized ( registed to common template space ) structural population dataset available in ANTsR.  By normalizing these brain slices to a common template, we can investigate covariance patterns across the pixel/voxel space.
+
+```{r exampler0,echo=FALSE,eval=TRUE}
+fns = c( "r16", "r27", "r30", "r62", "r64", "r85" )
+ref = antsImageRead( getANTsRData( fns[1] ) )
+```
+
+```{r exampler,echo=FALSE,eval=FALSE}
+mask = getMask( ref )
+plot( ref )
+mat = matrix( nrow = length( fns ), ncol = sum( mask ) )
+for ( i in 1:length( fns ) )
+  {
+  tar = antsImageRead(  getANTsRData( fns[i] )  )
+  reg = antsRegistration( ref, tar, typeofTransform = 'SyN' )
+  smoo = smoothImage( reg$warpedmovout, 2.0 )
+  mat[ i, ] = smoo[ mask == 1 ] / max( smoo )
+  }
+```
+
+Look at one of the normalized images.
+
+```{r regres,echo=FALSE,eval=FALSE}
+plot( tar )
+plot( reg$warpedmovout )
+```
+
+
+
 
 # Methods
 
@@ -29,76 +118,132 @@ This is the main section and should explain in detail the individual steps neces
 This section must be comprehensive. Do not send the reader away to find information for a particular step in another reference. All relevant practical detail must be given in this section.
 
 
-```{r antsrex1}
+Sparse canonical correlation analysis for neuroimaging (SCCAN) is a general purpose
+tool for "two-sided" multiple regression [@AvantsLibonRascovskyEtAl2014] that, along with other variants of CCA, can address such questions.  SCCAN, available within ANTsR [@AvantsDudaKilroyEtAl2015], exploits covariation across large datasets while imposing dataset-specific spatial regularization that helps prevent overfitting, especially important when $p >> n$ i.e. when the number of data measurements is much greater than the number of subjects on which these are measured.  SCCAN allows one to symmetrically compare one matrix of data to another and find linear relationships between them in a low-dimensional space, just like CCA, but with additional regularization parameters:
+$$
+x^\star, y^\star = argmax_{x,y} ~~\frac{x X^T~Y y}{\|Xx\|\|Yy\|}  - \gamma_x \| G^t_{\sigma x} \star x \|^+_1 - \gamma_y \| G^t_{\sigma y} \star y \|^+_1.
+$$
+Here, $\gamma_\cdot$ is a scalar weighting term for each variate that controls the impact of the $\ell_1^+$ penalty on the objective function (here denoted $\| \cdot \|^+_1$ ). The $\ell_1^+$ penalty differs from $\ell_1$ in that it sends negative values to zero.  The operator $G^t_{\sigma \cdot}$ performs spatial regularization (usually Gaussian or a modified Gaussian) on the solution vectors $x$ or $y$ where the amount of regularization is determined by $\sigma \cdot$. Much like singular value decomposition (SVD), the resulting subspace encodes a basis that may be used to reconstruct the original dataset. Also, like SVD, multiple solution vectors can be obtained from the above optimization which can be done in parallel or via deflation [@WittenTibshiraniHastie2009]. In comparison to methods which employ standard $\ell_1$ regularization, SCCAN has the benefit of inserting the spatial regularization inside the operator and projecting solutions to the non-negative space.  This means that the resulting solution vectors can be interpreted within the original units of the data i.e. similar to regions of interest.
+
+
+
+```{r antsrex1,echo=FALSE,eval=TRUE}
 library( ANTsR )
 img = antsImageRead( getANTsRData( "r16" ) )
 msk = getMask( img )
 r = 5
-k = 50
+myk = 50
 mat = getNeighborhoodInMask( img, msk, rep( r, img@dimension ), boundary.condition = 'mean' )
 ```
 
 Given a matrix representation of image neighborhood structure, we can express the relationship
 between ...
 
-```{r antsrex2}
-sdm = sparseDistanceMatrix( scale( mat ), k, kmetric = 'euc' )
-glp = sdm
-diag( glp ) = 0
-glp[ glp != 0 ] = -1
-diag( glp ) = abs( rowSums( glp ) )  # this is the graph laplacian
-# basic checks
-print( sum( glp[ 55 , ] ) )
-print( sum( glp[    , 1400 ] ) )
-# now evs
-nv = 50
-vpca = irlba::irlba( glp, nu = nv, nv = nv )
-eim = makeImage( msk, rowSums(vpca$v[,1:10] ) )
-eim = makeImage( msk, vpca$v[,11] )
-plot( img, eim*(-1), window.overlay=c(0.01,0.8) )
+
+Here is the code:
+```{r ex1,echo=FALSE,eval=FALSE}
+x = scale( mat, scale=F )
+myk = 100
+kcov = sparseDecom2( x, k=myk, kmetric = 'cov', mypkg = 'rflann' )
+```
+
+Look at a subset of the sparse matrix.
+
+```{r viewsmat,echo=FALSE,eval=FALSE}
+image( kcov[1:500,1:500] )
+```
+
+zooming in shows local clusters in the sparse matrix:
+
+```{r viewsmat2,echo=FALSE,eval=FALSE}
+inds = 20:80
+image( kcov[inds,inds] )
 ```
 
 
-Allow the image to diffuse along its laplacian.
+We compute the eigenvectors of this matrix using the IRLBA -- the augmented implicitly restarted Lanczos bidiagonalization algorithm.  IRLBA finds (few) approximate largest singular values and corresponding singular vectors of a sparse or dense matrix and is both a fast and memory-efficient way to compute a partial SVD.
 
-```{r glapdiff}
-# from wikipedia
-V = vpca$v
-D = vpca$d
-C0 = img[ msk == 1]
-# Transform the initial condition into the coordinate system of the eigenvectors
-C0V = t( V ) %*% C0  
-tseq = seq( 0, 0.05, by=0.01 )
-for ( t in tseq ) {
-# Loop through times and decay each initial component
-  Phi = C0V * exp( -D * t ) # Exponential decay for each component
-  Phi = V %*% Phi # Transform from eigenvector coordinate system to original coordinate system
-  phiImg = makeImage( msk, as.numeric( Phi ) ) * msk
-  plot( phiImg )
-}
+```{r rirl,echo=FALSE,eval=FALSE}
+mysvd = irlba( kcov, nv = 500 )
+print( dim( mysvd$v ) )
 ```
+
+Turn the eigenvector back into an image.
+
+```{r vimg,echo=FALSE,eval=FALSE}
+overlaymin = 0.1
+mimg1 = makeImage( mask, abs(mysvd$v[,1] ) ) %>% iMath("Normalize")
+mimg2 = makeImage( mask, abs(mysvd$v[,2] ) ) %>% iMath("Normalize")
+plot( ref, mimg1, window.overlay=c(overlaymin,1) )
+plot( ref, mimg2, window.overlay=c(overlaymin,1) )
+```
+
+Note that we display the top 90\% of the eigenvector values.  The majority of the eigenvector is sparse.  This sparsity is controlled by the value of $k$ which, here, is `r myk`.
+
+Let us look how this changes over values of $k$: Show $k=5$.
+```{r ksrch5,echo=FALSE,eval=FALSE}
+myk2 = 5
+print( paste( "k-value", myk2 ) )
+kcov = sparseDistanceMatrix( x, k=myk2, kmetric = 'cov', mypkg = 'rflann' )
+mysvd2 = irlba( kcov, nv = 2 )
+mimg2 = makeImage( mask, abs(mysvd2$v[,2] ) ) %>% iMath("Normalize")
+plot( ref, mimg2, window.overlay=c(overlaymin,1) )
+```
+
+
+
+Note the rapid initial decay followed by a slow falloff --- also note that this covariance matrix is based on `r length(fns)` subjects.  This suggests that we are effectively investigating local submanifolds of covariance patterns vs the global linear modeling provided by the classic SVD (which would limit the number of eigenvectors we can compute to `r length(fns)-1`).
+
+Finally, let us compare to "classic" SVD wherein -- using the same methods -- we see that a dense eigenvector results.
+
+```{r oldsvd,echo=FALSE,eval=FALSE}
+oldsvd = svd( x, nu = 0, nv = 2 )
+mimg2 = makeImage( mask, abs(oldsvd$v[,2] ) ) %>% iMath("Normalize")
+plot( ref, mimg2, window.overlay=c(overlaymin,1) )
+```
+
+
+In summary, computing $knn$-sparse covariance matrices enables a natural and fast method for investigating the principal eigenvectors derived from multiscale covariance structure.  In particular, the eigenvectors of such matrices appear to be sparse with non-zero content that increases with $k$.  This leads to a new approach to computing sparse eigenvectors that takes advantage of existing methods for computing fast SVD of sparse matrices and reduces the need for specific optimization algorithms.
+
+We can construct a matrix that is very similar to the $knn$-covariance matrix but includes an additional constraint of physical proximity.  In this case, we can argue that, by construction, the $knn$-spatial-covariance matrix is a sum of sparse and low-rank matrices.  For instance, one element in this sum would be defined by the covariance of the voxels centered at $x_m$ with some given spatial neighborhood radius $r$.
+
+```{r spatialconstraint,echo=FALSE,eval=FALSE}
+spatmat = t( imageDomainToSpatialMatrix( mask, mask ) )
+spatrad = sparseDistanceMatrix( spatmat, k = 500, kmetric = "gaussian",
+                                mypkg = 'rflann', sigma = 50.0 )
+```
+
+Visualize this spatial matrix.
+
+```{r spatmat,echo=FALSE,eval=FALSE}
+inds = 500:1000
+image( spatrad[ inds, inds ] )
+```
+
+zoom in more
+
+```{r spatmat2,echo=FALSE,eval=FALSE}
+inds = 500:600
+image( spatrad[ inds, inds ] )
+```
+
 
 # Notes
 
-As we all know, even the simplest techniques go wrong from time to time. Would you therefore indicate any major problems or faults that can occur with your technique? Try to indicate the major sources of problems and how they can be identified and overcome. With reference to related techniques, any variations of the technique that you have described should also be made in this section, as well as--where relevant--an indication of the sensitivity of the method, timescale for the singled technique, etc. This "Notes" section is a hallmark of this series and has been singled out for praise by a number of reviewers. Please try and make this section as extensive as possible by putting on paper all of your various experiences with the technique. Each ‘Note’ should be cross-referenced with the ‘Materials’ and ‘Methods’ sections, e.g. (see Note 1).
+## Note 1
 
-Some _significant_ applications are demonstrated in this chapter.
+You can use a full mask which reduces one concern but may add computation time
 
-## Example one
+## Note 2
 
-## Example two
+investigate i.e. visualize the candidate hypotheses.  in our example above, the research might treat the CCA output as "suggested hypotheses."  Candidate solutions may be rejected before passing them down to the stage wherein they are tested against variables that will compromise power (age in the example above).
 
+## Note 3
 
-# Final Words
+Permutation is, at times, recommended for evaluating significance [@Witten].  However, in our experience this may be anti-conservative in $p >> n$ datasets.  An effective alternative is to employ cross-validation of the correlation with permutation.  That is, rather than asking "how well do these correlation hold up under permutation?", one might ask "how does cross-validation performance change between real and permuted data"?  This latter strategy may be more informative and stable in smaller datasets.
 
-We have finished a nice book.
+## Note 4
 
+Robust data transformations can address the sensitivity of correlation-based analyses to outliers.  ANTsR provides a function `robustMatrixTransform` which transforms each data-point by a rank transform
 
-`r if (knitr:::is_html_output()) '# References'`
-
-```{r include=FALSE}
-# automatically create a bib database for R packages
-knitr::write_bib(c(
-  .packages(), 'bookdown', 'knitr', 'rmarkdown'
-), 'packages.bib')
-```
+# References
