@@ -72,9 +72,19 @@ We organize our functional image processing strategy around the Power coordinate
 
 We employ R version 3.3.1 ("Bug in Your Hair") for basic statistical processing. We also employ ANTsR version 0.3.3 [@TustisonShrinidhiWintermarkEtAl2015] for core image analysis, data organization and early development efforts.  ANTsR, itself, links to ITKR, ANTs and the ITK toolkits.  The specific versions of each concomitant library is documented within ANTsR software.  However, we note that the only "pure ANTs" tool used in this analysis is well-validated ants cortical thickness pipeline as above.  The remainder of the processing is performed within ANTsR which is available both at [http://stnava.github.io/ANTsR/](http://stnava.github.io/ANTsR/) and via Neuroconductor [https://neuroconductor.org/](https://neuroconductor.org/).  In addition to the PREVENT-AD neuroimaging, experiments in this paper additionally require the `boot` R package.  ANTsR, itself, has several dependencies which are identified at its webpage.
 
-### Toy dataset
 
-We use, as example, a normalized ( registed to common template space ) structural population dataset available in ANTsR.  By normalizing these brain slices to a common template, we can generate intuition about SCCAN covariance patterns via fast and easy to reproduce examples.  We first define the six subjects and use the first as template.
+# Methods
+
+Sparse canonical correlation analysis for neuroimaging (SCCAN) is a general purpose
+tool for "two-sided" multiple regression [@AvantsLibonRascovskyEtAl2014] that, along with other variants of CCA, can address such questions.  SCCAN, available within ANTsR [@AvantsDudaKilroyEtAl2015], exploits covariation across large datasets while imposing dataset-specific spatial regularization that helps prevent overfitting, especially important when $p >> n$ i.e. when the number of data measurements is much greater than the number of subjects on which these are measured.  SCCAN allows one to symmetrically compare one matrix of data to another and find linear relationships between them in a low-dimensional space, just like CCA, but with additional regularization parameters:
+$$
+x^\star, y^\star = argmax_{x,y} ~~\frac{x X^T~Y y}{\|Xx\|\|Yy\|}  - \gamma_x \| G^t_{\sigma x} \star x \|^+_1 - \gamma_y \| G^t_{\sigma y} \star y \|^+_1.
+$$
+Here, $\gamma_\cdot$ is a scalar weighting term for each variate that controls the impact of the $\ell_1^+$ penalty on the objective function (here denoted $\| \cdot \|^+_1$ ). The $\ell_1^+$ penalty differs from $\ell_1$ in that it sends negative values to zero.  The operator $G^t_{\sigma \cdot}$ performs spatial regularization (usually Gaussian or a modified Gaussian) on the solution vectors $x$ or $y$ where the amount of regularization is determined by $\sigma \cdot$. Much like singular value decomposition (SVD), the resulting subspace encodes a basis that may be used to reconstruct the original dataset. Also, like SVD, multiple solution vectors can be obtained from the above optimization which can be done in parallel or via deflation [@WittenTibshiraniHastie2009]. In comparison to methods which employ standard $\ell_1$ regularization, SCCAN has the benefit of inserting the spatial regularization inside the operator and projecting solutions to the non-negative space.  This means that the resulting solution vectors can be interpreted within the original units of the data i.e. similar to regions of interest. See Note 1.  The methods for the optimization of the SCCAN functional are beyond the scope of the current paper.  However, they rely on projected gradient descent on the SCCAN objective, as in [@KandelWangGeeEtAl2015].  See the compressed sensing literature for additional justification of these methods [@DonohoTsaigDroriEtAl2012; @BeckTeboulle2009; @BrediesLorenz2008; @BlumensathDavies2008; @HerrityGilbertTropp2006], which shows conditions under which such methods reach local optima (see Note 2).
+
+## Primer: Example 2D data
+
+Before proceeding to a more complex brain mapping study, we introduce a step-by-step example via a structural population dataset available in ANTsR.  By normalizing these brain slices to a common template, we can generate intuition about SCCAN covariance patterns via fast and easy to reproduce examples.  We first define the six subjects and use the first as template.
 ```{r exampler0,echo=TRUE,eval=TRUE}
 library( ANTsR )
 fns = c( "r16", "r27", "r30", "r62", "r64", "r85" )
@@ -82,147 +92,74 @@ ref = antsImageRead( getANTsRData( fns[1] ) )
 ```
 \noindent We then deformably register the group to the template and define a brain mask.  We also compute the jacobian determinant and the deformed gradient images to fill in toy $X$ and $Y$ matrices for later use.
 ```{r exampler,echo=TRUE,eval=FALSE}
-mask = getMask( ref )
-X = matrix( nrow = length( fns ), ncol = sum( mask ) )
-Y = matrix( nrow = length( fns ), ncol = sum( mask ) )
+maskX = getMask( ref )  %>% resampleImage(  c( 2, 2 ) ) %>% iMath("MD",2)
+maskY = resampleImage( maskX, c( 4, 4 ) )
+refsub = resampleImageToTarget( ref, maskY )
+X = matrix( nrow = length( fns ), ncol = sum( maskX ) )
+Y = matrix( nrow = length( fns ), ncol = sum( maskY ) )
 for ( i in 1:length( fns ) )
   {
   tar = antsImageRead(  getANTsRData( fns[i] )  )
   reg = antsRegistration( ref, tar, typeofTransform = 'SyN' )
-  jac = createJacobianDeterminantImage( ref, reg$fwdtransforms[1], 1 )
-  X[ i, ] = jac[ mask == 1 ]
-  tgr = antsApplyTransforms( ref, iMath( tar, "Grad", 1 ), reg$fwdtransforms )
-  Y[ i, ] = smoothImage( tgr, 1.5 )[ mask == 1 ]
+  jac = createJacobianDeterminantImage( ref, reg$fwdtransforms[1], 1 ) %>%
+    resampleImageToTarget( maskX )
+  X[ i, ] = jac[ maskX == 1 ]
+  tgr = antsApplyTransforms( ref, tar, reg$fwdtransforms[2] ) %>% 
+    resampleImageToTarget( maskY )
+  reftardif = abs( refsub - tgr )
+  Y[ i, ] = reftardif[ maskY == 1 ]
 }
 ```
-
-
-
-# Methods
-
-This is the main section and should explain in detail the individual steps necessary to carry out the technique. Where possible, please simply list the steps in numerical order. For techniques that comprise a number of separate major procedures, please indicate these separate procedures in the introduction, and then subdivide section 3 into subheadings to cover each procedure. The steps in each subsection should then be numbered individually, renumbering 2 from number one. Do take great care to try to indicate any little "tricks" or nuances that help improve your method by referring to relevant "notes" in section 4 (see below). This sort of information rarely gets into the scientific literature. You may also find it useful to relate to some aspects of the theory in this section indicating the purpose of some of the major steps by crossreferencing to an appropriate “note”. Do not be tempted to get involved in the description of variations/alternatives to your technique in this section: this can be done in the "Notes" section. Stick to the basic procedure detailed in this section.
-
-This section must be comprehensive. Do not send the reader away to find information for a particular step in another reference. All relevant practical detail must be given in this section.
-
-
-Sparse canonical correlation analysis for neuroimaging (SCCAN) is a general purpose
-tool for "two-sided" multiple regression [@AvantsLibonRascovskyEtAl2014] that, along with other variants of CCA, can address such questions.  SCCAN, available within ANTsR [@AvantsDudaKilroyEtAl2015], exploits covariation across large datasets while imposing dataset-specific spatial regularization that helps prevent overfitting, especially important when $p >> n$ i.e. when the number of data measurements is much greater than the number of subjects on which these are measured.  SCCAN allows one to symmetrically compare one matrix of data to another and find linear relationships between them in a low-dimensional space, just like CCA, but with additional regularization parameters:
-$$
-x^\star, y^\star = argmax_{x,y} ~~\frac{x X^T~Y y}{\|Xx\|\|Yy\|}  - \gamma_x \| G^t_{\sigma x} \star x \|^+_1 - \gamma_y \| G^t_{\sigma y} \star y \|^+_1.
-$$
-Here, $\gamma_\cdot$ is a scalar weighting term for each variate that controls the impact of the $\ell_1^+$ penalty on the objective function (here denoted $\| \cdot \|^+_1$ ). The $\ell_1^+$ penalty differs from $\ell_1$ in that it sends negative values to zero.  The operator $G^t_{\sigma \cdot}$ performs spatial regularization (usually Gaussian or a modified Gaussian) on the solution vectors $x$ or $y$ where the amount of regularization is determined by $\sigma \cdot$. Much like singular value decomposition (SVD), the resulting subspace encodes a basis that may be used to reconstruct the original dataset. Also, like SVD, multiple solution vectors can be obtained from the above optimization which can be done in parallel or via deflation [@WittenTibshiraniHastie2009]. In comparison to methods which employ standard $\ell_1$ regularization, SCCAN has the benefit of inserting the spatial regularization inside the operator and projecting solutions to the non-negative space.  This means that the resulting solution vectors can be interpreted within the original units of the data i.e. similar to regions of interest.
-
-
-## Example 2D data
-
-```{r antsrex1,echo=FALSE,eval=TRUE}
-library( ANTsR )
-img = antsImageRead( getANTsRData( "r16" ) )
-msk = getMask( img )
-r = 5
-myk = 50
-mat = getNeighborhoodInMask( img, msk, rep( r, img@dimension ), boundary.condition = 'mean' )
-```
-
-Given a matrix representation of image neighborhood structure, we can express the relationship
-between ...
-
-
-Here is the code:
+\noindent The minimal processing above makes clear the construction of the matrix representations and suggests there is no need for $X, Y$ to have the same number of columns. Given a matrix representation of image structure, we can express the relationship
+between these measurements in a lower dimensional space, via SCCAN.  Here is the code:
 ```{r ex1,echo=FALSE,eval=FALSE}
-x = scale( mat, scale=F )
-myk = 100
-kcov = sparseDecom2( x, k=myk, kmetric = 'cov', mypkg = 'rflann' )
+ccaMatrixList = list( 
+  scale( X, center=F, scale=F ), 
+  scale( Y, center=F, scale=F ) )
+cth = 50
+sccanToy = sparseDecom2( ccaMatrixList, inmask = c( maskX, maskY ), its = 10,
+  sparseness = c( 0.05, 0.1 ), nvecs = 4, smooth = 1.0, cthresh = c( cth, cth ), 
+  perms = 50 )
+sccanToy$ccasummary
 ```
+The parameters passed to the software relate directly to the optimization criterion.  More specifically:
 
-Look at a subset of the sparse matrix.
-
-```{r viewsmat,echo=FALSE,eval=FALSE}
-image( kcov[1:500,1:500] )
-```
-
-zooming in shows local clusters in the sparse matrix:
-
-```{r viewsmat2,echo=FALSE,eval=FALSE}
-inds = 20:80
-image( kcov[inds,inds] )
-```
-
-
-We compute the eigenvectors of this matrix using the IRLBA -- the augmented implicitly restarted Lanczos bidiagonalization algorithm.  IRLBA finds (few) approximate largest singular values and corresponding singular vectors of a sparse or dense matrix and is both a fast and memory-efficient way to compute a partial SVD.
+* The `sparseness` entry relates to the terms $\gamma_x, \gamma_y$. However, for user convenience, the units are expressed in terms of target percent sparseness (relative to the size of the mask).
+* The `smooth` and `cthresh` entries relate to the *operator* within the $\ell_1$ penalty term.  Above, we set $G_1.0^5$ where the numerator sets isolated voxel clusters below that size to zero.  Larger settings of $t$ lead to pseudo-eigenvectors that tend toward greater spatial connectivity.
+* `nvecs` sets the number of pseudo-eigenvectors to compute.
+We also set `perms = 20` which forces the algorithm to internally permute the data and recompute 20 times, comparing the original to the permuted correlations.  This provides an empirical, if conservative, estimate of significance for each pseudo-eigenvector pair.
 
 ```{r rirl,echo=FALSE,eval=FALSE}
-mysvd = irlba( kcov, nv = 500 )
-print( dim( mysvd$v ) )
+myevX1 = makeImage( maskX, abs( sccanToy$eig1[,2] ) ) %>%
+  resampleImageToTarget( ref ) %>% iMath("Normalize")
+myevY1 = makeImage( maskY, abs( sccanToy$eig2[,2] ) ) %>%
+  resampleImageToTarget( ref ) %>% iMath("Normalize")
+plot( ref, list( myevX1, myevY1 ), 
+  color.overlay = c( 'magma', 'viridis'), window.overlay = c( 0.1, 1 ) )
 ```
-
-Turn the eigenvector back into an image.
-
-```{r vimg,echo=FALSE,eval=FALSE}
-overlaymin = 0.1
-mimg1 = makeImage( mask, abs(mysvd$v[,1] ) ) %>% iMath("Normalize")
-mimg2 = makeImage( mask, abs(mysvd$v[,2] ) ) %>% iMath("Normalize")
-plot( ref, mimg1, window.overlay=c(overlaymin,1) )
-plot( ref, mimg2, window.overlay=c(overlaymin,1) )
-```
-
-Note that we display the top 90\% of the eigenvector values.  The majority of the eigenvector is sparse.  This sparsity is controlled by the value of $k$ which, here, is `r myk`.
-
-Let us look how this changes over values of $k$: Show $k=5$.
-```{r ksrch5,echo=FALSE,eval=FALSE}
-myk2 = 5
-print( paste( "k-value", myk2 ) )
-kcov = sparseDistanceMatrix( x, k=myk2, kmetric = 'cov', mypkg = 'rflann' )
-mysvd2 = irlba( kcov, nv = 2 )
-mimg2 = makeImage( mask, abs(mysvd2$v[,2] ) ) %>% iMath("Normalize")
-plot( ref, mimg2, window.overlay=c(overlaymin,1) )
-```
-
-
 
 Note the rapid initial decay followed by a slow falloff --- also note that this covariance matrix is based on `r length(fns)` subjects.  This suggests that we are effectively investigating local submanifolds of covariance patterns vs the global linear modeling provided by the classic SVD (which would limit the number of eigenvectors we can compute to `r length(fns)-1`).
 
-Finally, let us compare to "classic" SVD wherein -- using the same methods -- we see that a dense eigenvector results.
-
-```{r oldsvd,echo=FALSE,eval=FALSE}
-oldsvd = svd( x, nu = 0, nv = 2 )
-mimg2 = makeImage( mask, abs(oldsvd$v[,2] ) ) %>% iMath("Normalize")
-plot( ref, mimg2, window.overlay=c(overlaymin,1) )
-```
+Finally, let us compare to "classic" cca wherein -- using the same methods -- we see that a dense eigenvector results.
 
 
 ## Structural networks and resting connectivity in PREVENT-AD
 
 Age and cognition impact structural covariance [@FranzmeierBuergerTeipelEtAl2017] as well as resting connectivity [@FranzmeierBuergerTeipelEtAl2017].  If structural covariance also covaries with resting connectivity, then we can exploit SCCAN to identify covarying sub-networks from both types of data that may --- in downstream hypothesis testing --- relate to age, cognition or, potentially, disease status.  We follow a "clustering before hypothesis testing" approach similar to that proposed in eigenanatomy [@] but where the clustering of the data is based on covariation across modalities rather than within a single modality.  
 
-In summary, computing $knn$-sparse covariance matrices enables a natural and fast method for investigating the principal eigenvectors derived from multiscale covariance structure.  In particular, the eigenvectors of such matrices appear to be sparse with non-zero content that increases with $k$.  This leads to a new approach to computing sparse eigenvectors that takes advantage of existing methods for computing fast SVD of sparse matrices and reduces the need for specific optimization algorithms.
-
-We can construct a matrix that is very similar to the $knn$-covariance matrix but includes an additional constraint of physical proximity.  In this case, we can argue that, by construction, the $knn$-spatial-covariance matrix is a sum of sparse and low-rank matrices.  For instance, one element in this sum would be defined by the covariance of the voxels centered at $x_m$ with some given spatial neighborhood radius $r$.
-
-```{r spatialconstraint,echo=FALSE,eval=FALSE}
-spatmat = t( imageDomainToSpatialMatrix( mask, mask ) )
-spatrad = sparseDistanceMatrix( spatmat, k = 500, kmetric = "gaussian",
-                                mypkg = 'rflann', sigma = 50.0 )
-```
-
-Visualize this spatial matrix.
-
-```{r spatmat,echo=FALSE,eval=FALSE}
-inds = 500:1000
-image( spatrad[ inds, inds ] )
-```
-
-zoom in more
-
-```{r spatmat2,echo=FALSE,eval=FALSE}
-inds = 500:600
-image( spatrad[ inds, inds ] )
-```
 
 
 # Notes
 
-## Note 1
+## Note 1.
+
+Consider that a set of regions of interest may be considered as two-level functions in a common voxel space.  Then, we represent $k$ regions of interest as an "ROI matrix" $\mu$ of dimension $k \times p$.  If population data is normalized to a common space (an assumption behind our $X$ and $Y$ matrices), then the region of interest totals may be computed via $r_X = X \mu^T$.  This operation is analogous to what we achieve with SCCAN, but in a data-driven manner.
+
+## Note 2.
+
+Iterative thresholding methods are known to be sensitive to initialization. ANTsR therefore provides several initialization options.  See `?initializeEigenanatomy` and options that allow SCCAN to be guided by spatial priors.
+
+## Note 2
 
 Scaling the matrix inputs is a critical decision.  
 
@@ -244,15 +181,15 @@ Scaling the matrix inputs is a critical decision.
 
 Each case ...
 
-## Note 2
+## Note 3
 
 investigate i.e. visualize the candidate hypotheses.  in our example above, the research might treat the CCA output as "suggested hypotheses."  Candidate solutions may be rejected before passing them down to the stage wherein they are tested against variables that will compromise power (age in the example above).
 
-## Note 3
+## Note 4
 
 Permutation is, at times, recommended for evaluating significance [@WittenTibshiraniHastie2009].  However, in our experience this may be anti-conservative in $p >> n$ datasets.  An effective alternative is to employ cross-validation of the correlation with permutation.  That is, rather than asking "how well do these correlation hold up under permutation?", one might ask "how does cross-validation performance change between real and permuted data"?  This latter strategy may be more informative and stable in smaller datasets.
 
-## Note 4
+## Note 5
 
 Robust data transformations can address the sensitivity of correlation-based analyses to outliers [@WilmsCroux2016].  ANTsR provides a function `robustMatrixTransform` which transforms each data-point by a rank transform and thus acts as a general purpose and easy to use safeguard against such issues (although we note that careful data inspection is always a superior approach).  Referring back to our example dataset, we can see how this option can be used:
 
