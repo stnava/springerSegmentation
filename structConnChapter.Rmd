@@ -223,7 +223,7 @@ ggplot(cukedf, aes(AgeError, fill = test)) + geom_density(alpha = 0.2) +
 ```
 
 
-```{r renfn,echo=FALSE,eval=FALSE}
+```{r renfn,echo=FALSE,eval=TRUE}
 volfn = path.expand( "~/Downloads/rsfhtml/zzz" )
 volfn = paste( volfn, '.png', sep='' )
 n1fn = path.expand( "~/Downloads/rsfhtml/network2.png" )
