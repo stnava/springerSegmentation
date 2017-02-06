@@ -405,7 +405,9 @@ Most importantly, we note that it takes the ensemble of models a total of betwee
 The output for the predicted data model is:
 
 ```{r mylmconv,echo=FALSE, results='asis'}
+isbrian=system("whoami", intern =  T ) == 'bavants'
 lmfn = "~/desktop/projects/springerSegmentation/lmOutput.csv"
+if ( isbrian ) lmfn = "~/code/writing/springerSegmentation/lmOutput.csv"
 modelOutput = read.csv( path.expand( lmfn ) )
 kk = cbind( modelOutput[,1], round( modelOutput[,4:5]*10000)/10000 )
 colnames( kk ) = c("Variable","T-value","p-value")
@@ -424,6 +426,7 @@ The neurobiologically-motivated regression model (in R sytax) is:
 
 ```{r mylm,echo=FALSE, results='asis'}
 lmfn = "~/desktop/projects/springerSegmentation/lmOutput.csv"
+if ( isbrian ) lmfn = "~/code/writing/springerSegmentation/lmOutput.csv"
 modelOutput = read.csv( path.expand( lmfn ) )
 kk = cbind( modelOutput[,1], round( modelOutput[,4:5]*10000)/10000 )
 colnames( kk ) = c("Variable","T-value","p-value")
