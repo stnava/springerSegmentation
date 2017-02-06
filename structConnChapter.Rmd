@@ -169,11 +169,21 @@ This joint $X, Y$ matrix pair enables us to use SCCAN directly.  However, we mus
 
 * Matrix scaling:  This is an often overlooked component of dimensionality reduction, thought is has a large impact (See Note X).  We recommend the default option of simply centering the data before passing to SCCAN.  This avoids forcing all columns to have unit variance which may inflate the impact of noisy data sources (see Note X for a robust alternative).
 
-* Embedded smoothing within the optimization:  Regularization acts as a hedge against overfitting.  In SCCAN, this involves not only the sparsity levels but also setting the values for $G_\sigma^t$ which is the operator within the $\ell_1$ norm.  In this example, we only need consider the impact on the thickness pseudo-eigenvectors.  In general, we recommend setting the $\simga$ value to be 0.5 for voxel data which provides sufficiently smooth results in nearly every example we have encountered, even when little to no prior smoothing is employed.  We also choose a cluster threshold (the $t$ parameter) of 1,000 which focuses results on the scale of roughly a 10 voxel cube (a 1cm$^3$ volume, given 1mm input data.) 
+* Embedded smoothing within the optimization:  Regularization acts as a hedge against overfitting.  In SCCAN, this involves not only the sparsity levels but also setting the values for $G_\sigma^t$ which is the operator within the $\ell_1$ norm.  In this example, we only need consider the impact on the thickness pseudo-eigenvectors.  In general, we recommend setting the $\sigma$ value to be 0.5 for voxel data which provides sufficiently smooth results in nearly every example we have encountered, even when little to no prior smoothing is employed.  We also choose a cluster threshold (the $t$ parameter) of 1,000 which focuses results on the scale of roughly a 10 voxel cube (a 1cm$^3$ volume, given 1mm input data.) 
 
 * Setting the number of pseudo-eigenvectors:  As the goal of this study is to ultimately use the computed pseudo-eigenvectors within a general linear model, we elect to compute relatively few pairs.  Here, we set `nvec=6` and will only employ the top $k$ with correlations greater than a given threshold in our evaluation below.  Computation time is also a concern, here, due to the relatively high dimensional data for which we want a compressed and interpretable representation (SCCAN computation scales roughly linearly with `nvec`, given fixed matrices.)
 
 * Searching for the optimal sparsity settings: Choosing hyperparameters can be challenging unless one has substantial experience with a methodology or specific prior hypotheses about a dataset.  Given the relative novelty of this application, we cannot explicitly recommend a given sparsity level for the computation of regularized sparse canonical correlation.  In this case, our best option is to exploit the low cost of modern computing and search over a reasonable range of potential sparsity values.  We define "reasonable" as set of sparsity levels for which we expect to be able to make a visual interpretation of the derived networks.  In several prior SCCAN studies, we have searched over a sparsity parameter space that allows solutions to range from very sparse ($1\%$) up to $15\%$ of data coverage.  In the latter case, we can expect a component to cover roughly 15\% of the voxels.  Our recommended spatial regularization, above, also will restrict the solution to be spatially contiguous down to the selected scale.  In this application, we search regular increments of sparsity from 0.01 to 0.15 as a fraction of the number of columns in $X$ or $Y$.  This leads to a $10 \times 10$ parameter search space which we send to a compute cluster.
+
+```{r renfn,echo=FALSE,eval=TRUE}
+cvfn = path.expand( "~/Downloads/rsfhtml/cvResults.png" )
+volfn = path.expand( "~/Downloads/rsfhtml/zzz.png" )
+n1fn = path.expand( "~/Downloads/rsfhtml/network2.png" )
+n2fn = path.expand( "~/Downloads/rsfhtml/network4.png" )
+```
+
+
+![Rendering of the overlay](`r cvfn`)
 
 ### Step 3: Assess the validity of the SCCAN models.
 
@@ -188,6 +198,7 @@ $$
 Age = \sum_{i=1}^k ( \beta^x_i~ X x_i + \beta^y_i ~ Y y_i  ) + Sex + \epsilon 
 $$
 We use $k$-folds cross-validation to assess the relative accuracy of each equation rather than using model-based interpretation of these prediction equations.  In short, we ask how well --- in left out data --- each model can predict age based on a subset of training data.  We repeatedly perform 18-fold validation (training on 75\% and testing on 25\% data) in order to gain a distribution of performance for each model, using the `boot` package in R. This enables us to find out which set of sparseness parameters leads to the most predictive model.  In essence, this searches over the space of possible hypotheses regarding structure-function-age interactions.   While it does introduce a multiple comparisons problem, it is only on the order of the number of searched models, rather than the number of voxels or number of components.  Thus, it remains fairly conservative.  Alternative methods for assessing the validity of hyperparameters are discussed in Note X.
+
 
 ### Step 4: Visualize and interpret the multivariate results.
 
@@ -222,13 +233,6 @@ ggplot(cukedf, aes(AgeError, fill = test)) + geom_density(alpha = 0.2) +
   ggtitle("Average error over 50 runs of k-folds cross-validation")
 ```
 
-
-```{r renfn,echo=FALSE,eval=TRUE}
-volfn = path.expand( "~/Downloads/rsfhtml/zzz" )
-volfn = paste( volfn, '.png', sep='' )
-n1fn = path.expand( "~/Downloads/rsfhtml/network2.png" )
-n2fn = path.expand( "~/Downloads/rsfhtml/network4.png" )
-```
 
 ```{r ren,echo=FALSE,eval=FALSE}
 ap="~/code/ants-src/bin/bin/"
