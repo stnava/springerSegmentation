@@ -1,27 +1,38 @@
 ---
-title: "Convolutional neural networks for rapid and simultaneous brain extraction and tissue segmentation"
-link-citations: yes
-output: 
+title: Convolutional neural networks for rapid and simultaneous brain extraction and
+  tissue segmentation
+author:
+- affiliation: University of Pennsylvania, Philadelphia, PA 19104
+  name: Nicholas Cullen
+- affiliation: University of Pennsylvania, Philadelphia, PA 19104\footnote{B.A. is
+    currently a Biogen employee.}
+  name: Brian B. Avants
+csl: springerprotocols.csl
+output:
   pdf_document:
-#    citation_package: natbib
-    keep_tex: true
-    fig_caption: true
+    fig_caption: yes
+    keep_tex: yes
     latex_engine: pdflatex
     template: svm-latex-ms.tex
-thanks: "This work was supported by K01 ES025432-01"
-author:
-- name: Nicholas Cullen
-  affiliation: University of Pennsylvania, Philadelphia, PA 19104
-- name: Brian B. Avants
-  affiliation: University of Pennsylvania, Philadelphia, PA 19104\footnote{B.A. is currently a Biogen employee.}
-keywords: "deep learning, segmentation, convolutional, brain, neuroimaging"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
-geometry: margin=1in
-fontfamily: mathpazo
+  word_document: default
 fontsize: 11pt
+geometry: margin=1in
+keywords: deep learning, segmentation, convolutional, brain, neuroimaging
+link-citations: yes
+fontfamily: mathpazo
+thanks: This work was supported by K01 ES025432-01
 bibliography: dlSeg.bib
-csl: springerprotocols.csl
 ---
+
+```{r setup, echo=FALSE, eval=TRUE}
+options( digits =  2 )
+isbrian=system("whoami", intern =  T ) == 'bavants'
+if ( isbrian ) bd = '/Users/bavants/code/writing/'
+cohfn = paste(bd,'springerSegmentation/figures/cohortSelection.jpg',sep='')
+arfn  = paste(bd,'springerSegmentation/figures/probability_maps/arch2.png',sep='')
+resfn = paste(bd,'springerSegmentation/figures/result1.jpg',sep='')
+ffn   = paste(bd,'springerSegmentation/figures/nothing.png',sep='')
+```
 
 # Abstract
 
@@ -81,13 +92,11 @@ Convolutional networks are prevalent in brain segmentation research [@MoeskopsVi
 
 In the remainder of this chapter, we will detail the steps involved in developing a convolutional-deconvolutional network for brain extraction and segmentation.  These steps illustrate the efforts in this particular application's (recent) history but we also reflect on the more general lessons learned in engineering a practical machine learning system.
 
-![FIXME figure showing system](/Users/bavants/code/writing/springerSegmentation/figures/probability_maps/arch2.png)
-
 # MATERIALS
 
 ```{r demogs,eval=FALSE,echo=FALSE}
 library( ANTsR )
-dd=read.csv( path.expand( "~/Downloads/dlbs_cogdata/Cognitive_data/Subject_Information.csv" ) ) # available at the link above for cognitive data
+dd=read.csv( paste( bd, "springerSegmentation/csvs/Subject_Information.csv", sep='' ) ) # available at the link above for cognitive data
 haveImage=rep( NA, nrow( dd ) )
 for ( i in 1:nrow( dd ) ) {
   ifn = paste( path.expand("~/Downloads/DLBSsegs/"), dd$INDI_ID[i], "*tion.nii.gz", sep='' )
@@ -134,18 +143,6 @@ In order to define ground truth data for the DLBS, we took the six tissue segmen
 # 28398 age is 83
 ```
 
-<!--  ![Network architecture (FIXME REDO).](/Users/bavants/code/writing/springerSegmentation/figures/convdeconv.png) -->
-
-
-![Three images randomly selected from the DLBS cohort.](/Users/bavants/code/writing/springerSegmentation/figures/cohortSelection.jpg)
-
-
-![A comparison of the ground truth segmentation (center) to the convolution network's output.](/Users/bavants/code/writing/springerSegmentation/figures/result1.jpg)
-
-![an example of the convolutional network's features](/Users/bavants/code/writing/springerSegmentation/figures/nothing.png)
-
-
-![other highlights of results](/Users/bavants/code/writing/springerSegmentation/figures/nothing.png)
 
 
 ### Software
@@ -177,9 +174,9 @@ This section must be comprehensive. Do not send the reader away to find informat
 particular step in another reference. All relevant practical detail must be given in this section
 -->
 
-The problem of segmenting brain image voxel into distinct tissue classes using deep learning models is inherently a pixel- or voxel-wise classification problem. The input to the model is a 2D slice of a 3D brain image, and the model outputs a 2D image of equal shape but with each pixel assigned to one of the possible tissue classes.
+The problem of segmenting brain MRI into distinct tissue classes using deep learning models is inherently a pixel- or voxel-wise classification problem. The input to the model is a 2D slice of a 3D brain image, and the model outputs a 2D image of equal shape but with each pixel assigned to one of the possible tissue classes. In this work, we used a probabilistic voting ensemble of three 2D convolution-deconvolution architectures, each trained on full image slices belonging exclusively to either the axial, saggittal, or coronal plane. Our work is one of the few to actually train on entire image slices, wheras previous work in this area has mostly involved training on image patches. The slice-based approach is undoubedtly the preferred method, as the patch-based approach is computationally infeasible for segmenting entire images due to the large number of patches which must be sampled.  Our development process for this new technology roughly followed three steps: problem identification, network design and evaluation, and interpretation stages.  These steps are quite general to most machine learning, and can thus serve as a reference guideline for future work in solving related problems.
 
-In this work, we used a probabilistic voting ensemble of three 2D convolution-deconvolution architectures, each trained on full image slices belonging exclusively to either the axial, saggittal, or coronal plane. Our work is one of the few to actually train on entire image slices, wheras previous work in this area has mostly involved training on image patches. The slice-based approach is undoubedtly the preferred method, as the patch-based approach is computationally infeasible for segmenting entire images due to the large number of patches which must be sampled.
+<!--
 
 The end-to-end process we took for training a deep convolutional network for simulataneous brain extraction and tissue segmentation consists of the following steps:
 
@@ -204,18 +201,13 @@ The end-to-end process we took for training a deep convolutional network for sim
   * Distribution Phase
       * distribute and package our code for community use and feedback
 
-These phases may be roughly grouped into problem identification, network design and evaluation, and interpretation stages.
-
-\noindent See Figure 1 for an overview of this system.  
-
-FIXME: figure showing system - something like [figure 1, maybe 1D here](http://msb.embopress.org/content/msb/12/7/878.full.pdf)
-
-![FIXME figure showing system](/Users/bavants/code/writing/springerSegmentation/figures/nothing.png)
+-->
 
 
-We note that these steps are quite general to most machine learning problems, and can thus serve as a reference guideline for future work in solving related problems.
 ## 0. Problem Identification
+
 <!-- not sure where to make this an actual section/distinct step or put it in the intro, so just leaving it as section 0 for now (NC) -->
+
 Identifying the exact problem to solve and clearly delineating our goals was the first step we took. In general, we wanted a model which simulataneously extracted the brain and performed tissue segmentation, required minimal pre-processing of raw brain images, performed the tasks quickly and robustly, and is easily shared and used in the community. We accomplished all of these improvements, with the end result being an accurate, fast, easily usable segmentation algorithm that will never bottleneck the entire research pipeline.
 
 ### 0.1 simultaneous brain extraction and tissue segmentation
@@ -250,9 +242,9 @@ Common with best practices in machine learning, we split the data into training,
 
 The DLBS dataset has 270 subjects, so we randomly split each subjects into the following configuration:
 
-  * 140 train subjects
+  * 190 train subjects
   * 30 validation subjects
-  * 100 test subjects
+  * 50 test subjects
 
 Because the DLBS dataset has all healthy subjects and a diverse population, we are confident in randomly splitting the subjects into one of the three above categories. However, when working with a dataset involving healthy controls and diseased subjects, it is best practice to ensure the classes (healthy vs control) are represented in equal proportions across the train/validation/test splits.
 
@@ -399,21 +391,8 @@ Moreover, we looked at how our predictions -- and the corresponding dice coeffic
 Most importantly, we note that it takes the ensemble of models a total of between 15-20 seconds for a single subject. Since the model is already trained, it will <i>always</i> take between 15-20 seconds for any new images. This is a main benefit of prediction, since if we can prove our model generalizes across datasets, then users will have an accurate and fast segmentation model that will apply to any arbitrary dataset.
 
 
-### 5.2 crucially an independent biologically-motivated criterion; 
-
-The output for the predicted data model is:
-
-```{r mylmconv,echo=FALSE, results='asis'}
-isbrian=system("whoami", intern =  T ) == 'bavants'
-lmfn = "~/desktop/projects/springerSegmentation/lmOutput.csv"
-if ( isbrian ) lmfn = "~/code/writing/springerSegmentation/lmOutput.csv"
-modelOutput = read.csv( path.expand( lmfn ) )
-kk = cbind( modelOutput[,1], round( modelOutput[,4:5]*10000)/10000 )
-colnames( kk ) = c("Variable","T-value","p-value")
-print( knitr::kable(  kk[-1,]  ) )
-```
-
 ### 5.3 biologically motivated metrics
+
 <!-- moved from being section 2.1.. didn't think it fit there -->
 We observe that, within the DLBS cohort, there is a reliable relationship between tissue volumes and the MMSE score.  There is also a significant relationship between tissue volumes and age as well as age and MMSE.  Our evaluation will use tissue volumes as a surrogate measurement for "neurological age" or "brain age" [@FrankeZieglerKloeppelEtAl2010].  Ideally, the convolutional network output will also reproduce this finding with the *predicted* segmentations.  That is, we can run the same regression model as that below but with the convolution network's segmentations (in testing data) replacing the original ground truth segmentation volumes. 
 
@@ -424,8 +403,8 @@ The neurobiologically-motivated regression model (in R sytax) is:
 \noindent where `CSF` is cerebrospinal fluid, `GM` is gray matter, `WM` is white matter, `DGM` is deep gray matter and `BS` indicates brain stem.  The output for the training data model is:
 
 ```{r mylm,echo=FALSE, results='asis'}
-lmfn = "~/desktop/projects/springerSegmentation/lmOutput.csv"
-if ( isbrian ) lmfn = "~/code/writing/springerSegmentation/lmOutput.csv"
+lmfn = "~/desktop/projects/springerSegmentation/csvs/lmOutput.csv"
+if ( isbrian ) lmfn = "~/code/writing/springerSegmentation/csvs/lmOutput.csv"
 modelOutput = read.csv( path.expand( lmfn ) )
 kk = cbind( modelOutput[,1], round( modelOutput[,4:5]*10000)/10000 )
 colnames( kk ) = c("Variable","T-value","p-value")
@@ -433,6 +412,29 @@ print( knitr::kable(  kk[-1,]  ) )
 ```
 
 \noindent The data reproducing these findings may be found at the DLBS website and [on Figshare](https://figshare.com/articles/Dallas_lifespan_brain_study_anatomical_segmentations/4573021).
+
+
+The output for the predicted data model is:
+
+```{r mylmconv,echo=FALSE, results='asis'}
+lmfn = "~/desktop/projects/springerSegmentation/csvs/lmOutput.csv"
+if ( isbrian ) lmfn = "~/code/writing/springerSegmentation/csvs/lmOutput.csv"
+modelOutput = read.csv( path.expand( lmfn ) )
+kk = cbind( modelOutput[,1], round( modelOutput[,4:5]*10000)/10000 )
+colnames( kk ) = c("Variable","T-value","p-value")
+# print( knitr::kable(  kk[-1,]  ) )
+dd=read.csv( path.expand( paste( bd, "springerSegmentation/csvs/Subject_Information.csv", sep='' ) ) )
+gtseg=read.csv( path.expand( paste( bd, "springerSegmentation/csvs/groundTruthSegmat.csv", sep='' ) ) )
+nickres=read.csv( paste( bd, "springerSegmentation/csvs/dice_results_norm.csv", sep='' ) )
+names( nickres )[ 1 ] = "INDI_ID"
+mm = merge( nickres, dd, by = "INDI_ID" )
+mm = merge( mm, gtseg, by = "INDI_ID" )
+# print( summary( lm(  Age ~  Gender + vol.CSF + vol.GM + vol.WM + vol.DGM + vol.BS , data = mm )  ) )
+mdl = lm( MMSE ~ EducationYears + Gender +  vol.GM   , data = mm )
+mdlgt = lm( MMSE ~ EducationYears + Gender +  GM   , data = mm )
+mycoff = data.frame( coefficients( summary( mdl  )) )
+knitr::kable( mycoff[-1,] , caption="The predicted segmentations maintain the relationship with cognitive data found in the training cohort." )
+```
 
 
 ## 6. Interpretation Phase 
@@ -519,4 +521,16 @@ Until network building and design becomes more automated (inevitably), there rem
 
 This depends on preprocessing - Expand on this!
 
+\newpage
+
+
+![Three images randomly selected from the DLBS cohort.](`r cohfn`)
+
+![FIXME figure showing system](`r arfn`)
+
+![A comparison of the ground truth segmentation (center) to the convolution network's output.](`r resfn`)
+
+![an example of the convolutional network's features](`r ffn`)
+
+\newpage 
 # References

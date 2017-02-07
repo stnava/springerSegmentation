@@ -379,7 +379,7 @@ knitr::kable( lmdf , caption="The regression results for the best model.  Thk in
 ```{r bestmodelmvcoord,results='asis',echo=FALSE}
 lmdf = read.csv( "~/Downloads/rsfhtml/mvcoord.csv" )
 options( digits =  2 )
-knitr::kable( lmdf[ , c(1:4,6:8) ] , caption="The anatomical coordinates for the two most important thickness pseudo-eigenvectors in the best model.  Recall that these are multivariate regions of interest.  This table identifies the key loci detailing the spatial extent of the pseudo-eigenvector (referred to in the table as *_node).  The NetworkID column shows an overall descriptive name differentiating each pseudo-eigenvector.  The x, y, z coordinate columns show the MNI space coordinates.  The Brodmann and AAL columns give an approximate anatomical region/label for each node. The pval column shows the pval for the overall eigenvector and shows NA for the sub-nodes.")
+knitr::kable( lmdf[ , c(1:4,6:8) ] , caption="The anatomical coordinates for the two most important thickness pseudo-eigenvectors in the best model.  Recall that these are multivariate regions of interest.  This table identifies the key loci detailing the spatial extent of the pseudo-eigenvector (one locus per row).  The NetworkID column shows an overall descriptive name differentiating each pseudo-eigenvector.  The x, y, z coordinate columns show the MNI space coordinates.  The Brodmann and AAL columns give an approximate anatomical region/label for each locus. The pval column shows the p-value for the overall eigenvector and shows NA for the sub-nodes/loci.")
 ```
 
 
