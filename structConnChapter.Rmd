@@ -7,12 +7,13 @@ author:
   name: Brian B. Avants
 csl: springerprotocols.csl
 output:
-  html_document: default
   pdf_document:
     fig_caption: yes
     keep_tex: yes
     latex_engine: pdflatex
     template: svm-latex-ms.tex
+  html_document: default
+  word_document: default
 fontsize: 11pt
 geometry: margin=1in
 keywords: dimensionality reduction, sparse canonical correlation analysis, sccan,
@@ -32,24 +33,25 @@ knitr::opts_chunk$set(echo = TRUE)
 
 <!-- In one or two paragraphs, please write an overview of the method described. -->
 
-Human brain mapping is increasingly faced with the need to relate multiple small sample size, but high-dimensional ("short and wide") datasets.  Exploratory analysis of such data often targets questions regarding network dysfunction in populations for which there is relatively little prior work.  The questions that one may address with such high-dimensional data may relate to traditional "small" measurements such as age, a specific cognitive variable or a risk penotype.  We overview how to use sparse canonical correlation analysis to produce biologically principled low-dimensional representations before proceeding to hypothesis testing, an approach which conserves power by taking advantage of the underlying neurobiological covariation.  We provide an example that maps voxel-wise cortical thickness measurements to resting state network correlations in order to identify structure-function sub-networks with very little further supervision.  The resulting network-like, sparse basis functions allow one to predict traditional univariate outcomes from multiple neuroimaging modalities even when sample sizes are relatively small.
+
+Human brain mapping is increasingly faced with the need to efficiently interrogate small sample size, but high-dimensional ("short and wide") data-sets. Such data may derive from rare or difficult to identify populations wherein we seek to detect subtle network changes that precede disease. Few prior hypotheses may exist in these cases and yet, due to small sample size, exploratory analysis is power challenged. We overview how to use sparse canonical correlation analysis to produce biologically principled low-dimensional representations before proceeding to hypothesis testing. This strategy conserves power by taking advantage of the underlying neurobiological covariation across modalities to compress large data-sets.  We provide an example that maps voxel-wise cortical thickness measurements to resting state network correlations in order to identify structure-function sub-networks with little further supervision.  The resulting network-like, sparse basis functions allow one to predict traditional univariate outcomes from multiple neuroimaging modalities even when sample sizes are relatively small. Importantly, these data-driven functions are anatomically and edge-wise specific, allowing a nearly traditional neuroscientific interpretation.
 
 
 # Introduction
 
 <!-- This section should contain a summary of, and the outline of any theory to, the method that you’re are describing. It should also outline the major procedures involved in the protocol.-->
 
-Sparse canonical correlation analysis is gaining popularity within biomedical analysis as a tool for handling multiview high-dimensional datasets [@WittenTibshiraniHastie2009; @AvantsCookUngarEtAl2010; @AvantsCookMcMillanEtAl2010; @ChaliseBatzlerAboEtAl2012; @DudaDetreKimEtAl2013; @LinCalhounWang2014; @AvantsLibonRascovskyEtAl2014; @FangLinSchulzEtAl2016; @DuHuangYanEtAl2016].  Perhaps the first effort to extend Hotelling's original work [@hotelling1936relations] to sparse solutions involved relating specific words within musical annotations directly to specific sounds [@torres2007finding] by adding $\ell_1$ regularization. More recently, the method is gaining traction in imaging genomics to relate imaging phenotypes to genotype, potentially by taking advantage of prior knowledge in the form of structured sparsity [@DuHuangYanEtAl2016]. 
+Sparse canonical correlation analysis is gaining popularity within biomedical analysis as a tool for handling multiview high-dimensional data-sets [@WittenTibshiraniHastie2009; @AvantsCookUngarEtAl2010; @AvantsCookMcMillanEtAl2010; @ChaliseBatzlerAboEtAl2012; @DudaDetreKimEtAl2013; @LinCalhounWang2014; @AvantsLibonRascovskyEtAl2014; @FangLinSchulzEtAl2016; @DuHuangYanEtAl2016].  Perhaps the first effort to extend Hotelling's original work [@hotelling1936relations] to sparse solutions involved relating specific words within musical annotations directly to specific sounds [@torres2007finding] by adding $\ell_1$ regularization. More recently, the method is gaining traction in imaging genomics to relate imaging phenotype to genotype, potentially by taking advantage of prior knowledge in the form of structured sparsity [@DuHuangYanEtAl2016]. 
 
-Despite these new applications, the advantages of CCA remain the same today as in 1936: CCA allows one to symmetrically relate sets of variables to each other.  Specifically, consider two matrices, $X$ (dimension $n \times p$ ) and $Y$ (dimension $n \times q$).  If we want a direct univariate comparison between the columns of these matrices, then we would have to perform on the order of $p \times q$ pairwise calculations.  Clearly, if $p$ and $q$ are large (e.g. greater than several thousand), then this results in a very large computational burden.  Becausing neuroimaging information is often highly redundant, this univariate comparison forces many more individual comparisons than should be necessary to gain an understanding of the robustness of the relationship between these measurements.  In contrast, CCA can make this comparison with a single multivariate calculation that maximizes:
+Despite these new applications, the advantages of CCA remain the same today as in 1936: CCA allows one to symmetrically relate sets of variables to each other.  Specifically, consider two matrices, $X$ (dimension $n \times p$ ) and $Y$ (dimension $n \times q$).  If we want a direct univariate comparison between the columns of these matrices, then we would have to perform on the order of $p \times q$ pairwise calculations.  Clearly, if $p$ and $q$ are large (e.g. greater than several thousand), then this results in a very large computational burden.  Because neuroimaging information is often highly redundant, this univariate comparison forces many more individual comparisons than should be necessary to gain an understanding of the relationship between these measurements.  In contrast, CCA can make this comparison with a single multivariate calculation:
 $$
 x^\star, y^\star = argmax_{x,y} ~~Corr( X u, Y v ) 
 $$
-where Corr represents Pearson correlation and $x$ and $y$ are the solution vectors (or matrices if we are computing multiple canonical variates.)  The variables $x$ and $y$ project $X$ and $Y$ into two $n \times 1$ vectors.  While it is clear that the directly multivariate approach gains power by avoiding multiple comparisons, one compromises interpretability.  That is, the factors that traditional CCA produces are dense.  In analogy to linear regression, the "$\beta$ weights" are non-zero on both sides of the equation.  
+where Corr represents Pearson correlation and $x^\star$ and $y^\star$ are the optimal solution vectors (or matrices if we are computing multiple canonical variates.)  The variables $x$ and $y$ project $X$ and $Y$ into two $n \times 1$ vectors.  While it is clear that the directly multivariate approach gains power by avoiding multiple comparisons, one compromises interpretability.  That is, the factors that traditional CCA produces are dense.  In analogy to linear regression, the "$\beta$ weights" are non-zero on both sides of the equation.  
 
-The need to increase interpretability motivates sparse CCA, which allows $x$ and $y$ to have entries which are "mostly zero" and therefore have more specificity.  This is a useful property in neuroscience which seeks to understand the hierarchical and (somewhat) segregated nature of the brain (and focal impact of brain disorders).  Sparse CCA allows one to powerfully address the question of how patterns of variability in cortical structure relate to patterns of resting activity, as measured by functional magnetic resonance imaging. This question is fundamental to understanding not only how structure recapitulates function but also how changes in the organization of the brain may precede the onset of clinical symptoms.  Relatively few studies address the question of how functional connectivity directly associates with cortical (or structural) networks [@Romero-GarciaAtienzaCantero2014; @MarstallerWilliamsRichEtAl2015] where we define a structural network as a set of covarying cortical regions [@KhundrakpamLewisReidEtAl2017].  The relative paucity of studies may relate to the lack of freely available statistical frameworks for addressing this question.
+The need to increase interpretability motivates sparse CCA, which allows $x$ and $y$ to have entries which are "mostly zero" and therefore have more specificity.  This is a useful property in neuroscience which seeks to understand the hierarchical and (somewhat) segregated nature of the brain (and focal impact of brain disorders).  Sparse CCA allows one to powerfully address, for example, questions such as how patterns of variability in cortical structure relate to patterns of resting activity, as measured by functional magnetic resonance imaging. This type of question is fundamental to understanding not only how structure recapitulates function but also how changes in the organization of the brain may precede the onset of clinical symptoms.  Relatively few studies address the question of how functional connectivity directly associates with cortical (or structural) networks [@Romero-GarciaAtienzaCantero2014; @MarstallerWilliamsRichEtAl2015] where we define a structural network as a set of covarying cortical regions [@KhundrakpamLewisReidEtAl2017].  The relative paucity of studies may relate to the lack of freely available statistical frameworks for addressing this question.
 
-The ability to project large sets of complementary neuroimaging measurements into a low-dimensional and interpretable space is a powerful one for brain mapping. The CCA (and sparse CCA) methodology permits hypotheses about the brain to be framed in new and fundamentally multivariate ways.  As we will see below, with proper constraints, sparse CCA can produce solutions that in some sense capture what we think of as networks: sets of measurements that covary, presumably due to underlying neurobiological mechanisms.  This mitigates several problems:  multiple comparisons correction, perhaps too rigid prior definitions of network characteristics and the need to "translate" artificially independent voxel-based statistical tests into regularized statistical maps (by, for example, cluster constrained post-processing).  Below, we will make these statements specific by employing a public dataset to show how we can employ sparse canonical correlation analysis for neuroimaging (SCCAN) [@AvantsLibonRascovskyEtAl2014] to compute a structure-function basis set by associating whole brain cortical thickness  directly to resting state network correlation matrices.  We use SCCAN to infer the structural patterns that relate to functional connectivity patterns and how these may be used to build an interpretable, predictive regression model (based on multiple neuroimaging modalities) for demographic variables.  We detail elements of the software, visualization, interpretation and  evaluation with reference to the clinical considerations raised by the freely available Pre-symptomatic Evaluation of Novel or Experimental Treatments for Alzheimer's Disease (PREVENT-AD) dataset [@OrbanMadjarSavardEtAl2015] on which we focus.
+The ability to project large sets of complementary neuroimaging measurements into a low-dimensional and interpretable space is a powerful one for brain mapping. The CCA (and sparse CCA) methodology permits hypotheses about the brain to be framed in new and fundamentally multivariate ways.  As we will see below, with proper constraints, sparse CCA can produce solutions that in some sense capture what we think of as networks: sets of measurements that covary, presumably due to underlying neurobiological mechanisms.  This mitigates several problems:  multiple comparisons correction, perhaps too rigid prior definitions of network characteristics and the need to "translate" artificially independent voxel-based statistical tests into regularized statistical maps (by, for example, cluster constrained post-processing).  Below, we will make these statements specific by employing a public data-set to show how we can employ sparse canonical correlation analysis for neuroimaging (SCCAN) [@AvantsLibonRascovskyEtAl2014] to compute a structure-function basis set by associating whole brain cortical thickness  directly to resting state network correlation matrices.  We use SCCAN to infer the structural patterns that relate to functional connectivity patterns and how these may be used to build an interpretable, predictive regression model (based on multiple neuroimaging modalities) for demographic variables.  We detail elements of the software, visualization, interpretation and  evaluation with reference to the clinical considerations raised by the freely available Pre-symptomatic Evaluation of Novel or Experimental Treatments for Alzheimer's Disease (PREVENT-AD) data-set [@OrbanMadjarSavardEtAl2015] on which we focus.
 
 
 # Materials
@@ -57,42 +59,43 @@ The ability to project large sets of complementary neuroimaging measurements int
 
 ## Imaging data
 
-We demonstrate our application on the T1-weighted and resting state fMRI neuroimages collected in the PREVENT-AD study described in detail in [@OrbanMadjarSavardEtAl2015]. The cohort subjects are cognitively normal with average age 65.4 $\pm$ 6.3 years (min 55.0, max 84.0); PREVENT-AD includes 58 females and 22 males with documented family history of Alzheimer's disease (AD) but with good general health at enrollment.  Subjects will be followed longitudinally to quantify the difference in normal aging and progression to AD in this high-risk group. All 80 subjects are scanned at two different sessions conducted within 111.4 $\pm$ 24.3 days of each other.  Each session includes 1mm$^3$ T1-weighted MRI and resting state functional MRI collected on a 3T Siemens machine as described [@OrbanMadjarSavardEtAl2015].  The resting state fMRI comprises two 5 min 45 second runs within each session.  Due to the relative temporal proximity of the sessions and collection of multiple runs within each session, this dataset presents a valuable opportunity to assess fMRI reliability in this special cohort, as covered in the data source publication.  However, we focus only on the first session data which precedes randomized treatment by Naproxen that could potentially impact the second session data.  
+We demonstrate our application on the T1-weighted and resting state fMRI neuroimages collected in the PREVENT-AD study described in detail in [@OrbanMadjarSavardEtAl2015]. The cohort subjects are cognitively normal with average age 65.4 $\pm$ 6.3 years (min 55.0, max 84.0); PREVENT-AD includes 58 females and 22 males with documented family history of Alzheimer's disease (AD) but with good general health at enrollment.  Subjects will be followed longitudinally to quantify the difference in normal aging and progression to AD in this high-risk group. All 80 subjects are scanned at two different sessions conducted within 111.4 $\pm$ 24.3 days of each other.  Each session includes 1mm$^3$ T1-weighted MRI and resting state functional MRI collected on a 3T Siemens machine as described [@OrbanMadjarSavardEtAl2015].  The resting state fMRI comprises two 5 min 45 second runs within each session.  Due to the relative temporal proximity of the sessions and collection of multiple runs within each session, this data-set presents a valuable opportunity to assess fMRI reliability in this special cohort, as covered in the data source publication.  However, we focus only on the first session data which precedes randomized treatment by Naproxen that could potentially impact the second session data.  
 
 ### Structural image processing 
 
-We processed each T1 image through the ANTs cortical thickness pipeline [@TustisonCookKleinEtAl2014].  After viewing several example datasets from the PREVENT-AD cohort, we selected the "Oasis" template from [@TustisonCookKleinEtAl2014] due to its similarity in terms of T1 contrast and defacing protocol to PREVENT-AD. ANTs cortical thickness produces a six tissue segmentation which has been validated with respect to FreeSurfer [@TustisonCookKleinEtAl2014].  This segmentation procedure performs brain extraction followed by tissue segmentation within the brain mask.  The brain masking algorithm involves bias correction, two registration steps, segmentation and morphological operations.  The probability maps that emerge from this part of the pipeline are passed to a volumetric, voxel-wise cortical thickness measurement algorithm, DiReCT [@DasAvantsGrossmanEtAl2009].  DiReCT accounts for buried sulci while incorporating tissue-class uncertainties in the thickness estimation step and provides a volumetric alternative that may extract more meaningful variability in comparison to Freesurfer in some cohorts [@TustisonCookKleinEtAl2014].  The thickness data for each subject is transferred to the structural T1 template space.  By masking the thickness data with a group-wise cortical mask, we transform the voxel representation to a matrix represenation. Below, the thickness data will comprise the "left-hand" view in SCCAN, i.e. the $X$ matrix.
+We processed each T1 image through the ANTs cortical thickness pipeline [@TustisonCookKleinEtAl2014].  After viewing several example data-sets from the PREVENT-AD cohort, we selected the "Oasis" template from [@TustisonCookKleinEtAl2014] due to its similarity to PREVENT-AD in terms of T1 contrast and defacing protocol. ANTs cortical thickness produces a six tissue segmentation which has been validated with respect to FreeSurfer [@TustisonCookKleinEtAl2014].  This segmentation procedure performs brain extraction followed by tissue segmentation within the brain mask.  The brain masking algorithm involves bias correction, two registration steps, segmentation and morphological operations.  The probability maps that emerge from this part of the pipeline are passed to a volumetric, voxel-wise cortical thickness measurement algorithm, DiReCT [@DasAvantsGrossmanEtAl2009].  DiReCT accounts for buried sulci while incorporating tissue-class uncertainties in the thickness estimation step and provides a volumetric alternative that may extract more meaningful variability in comparison to Freesurfer in some cohorts [@TustisonCookKleinEtAl2014].  The thickness data for each subject is transferred to the structural T1 template space.  By masking the thickness data with a group-wise cortical mask, we transform the voxel representation to a matrix representation. Below, the thickness data will comprise the "left-hand" view in SCCAN, i.e. the $X$ matrix.
 
 ### Functional image processing 
 
-We organize our functional image processing strategy around the Power coordinate system [@PowerCohenNelsonEtAl2011] which we will use to generate connectivity matrices of size $270 \times 270$.  The additional two nodes correspond to the left and right head of the hippocampus. Such matrices allow a compressed representation of whole-brain connectivity patterns [@ShirerRyaliRykhlevskaiaEtAl2012] indexed at reliable anatomical coordinates derived from meta-analysis in task studies. We motion correct each run for the baseline session in the PREVENT-AD cohort to a subject-specific, iteratively computed times series mean and collect the final transformation parameters for later analysis as part of quality assurance.  We also compute nuisance variables within non-cortical tissue via CompCor, keeping 10 nuisance predictors as in [@ShirerJiangPriceEtAl2015].  We residualize nuisance variables from the BOLD signal within the cerebrum and compute the pairwise correlation between all Power nodes. We subsequently align the mean resting BOLD image to the individual time point brain extracted T1.  We then map the resting BOLD data to the group space through a composite transformation. Finally, we generate a vector representation of the connection matrix from the upper triangle.  This will, below, enter into $Y$, i.e. the "right hand" matrix in SCCAN.  A subset of individual timepoints of resting state exhibited excessive motion artifact, based on framewise displacement, and were removed from further analysis ($n=$8).  We briefly investigated the reliability of this processing stream and found it to be consistent with results reported in [@OrbanMadjarSavardEtAl2015].
+We organize our functional image processing strategy around the Power coordinate system [@PowerCohenNelsonEtAl2011] which we will use to generate connectivity matrices of size $270 \times 270$.  The additional two nodes correspond to the left and right head of the hippocampus. Such matrices allow a compressed representation of whole-brain connectivity patterns [@ShirerRyaliRykhlevskaiaEtAl2012] indexed at reliable anatomical coordinates derived from meta-analysis in task studies. We motion correct each run for the baseline session in the PREVENT-AD cohort to a subject-specific, iteratively computed times series mean and collect the final transformation parameters for later analysis as part of quality assurance.  We also compute nuisance variables within non-cortical tissue via CompCor, keeping 10 nuisance predictors as in [@ShirerJiangPriceEtAl2015].  We residualize nuisance variables from the BOLD signal within the cerebrum and compute the pairwise correlation between all Power nodes. We subsequently align the mean resting BOLD image to the individual time point brain extracted T1.  We then map the resting BOLD data to the group space through a composite transformation. Finally, we generate a vector representation of the connection matrix from the upper triangle.  This will, below, enter into $Y$, i.e. the "right hand" matrix in SCCAN.  A subset of individual timepoints of resting state exhibited excessive motion artifact, based on framewise displacement, and were removed from further analysis ( n = 8 ).  We investigated the reliability of this processing stream and found it to be consistent with results reported in [@OrbanMadjarSavardEtAl2015].
 
 
 
 ## Software
 
-We employ R version 3.3.1 ("Bug in Your Hair") for basic statistical processing. We also employ ANTsR version 0.3.3 [@TustisonShrinidhiWintermarkEtAl2015] for core image analysis, data organization and early development efforts.  ANTsR, itself, links to ITKR, ANTs and the ITK toolkits.  The specific versions of each concomitant library is documented within ANTsR software.  However, we note that the only "pure ANTs" tool used in this analysis is well-validated ants cortical thickness pipeline as above.  The remainder of the processing is performed within ANTsR which is available both at [http://stnava.github.io/ANTsR/](http://stnava.github.io/ANTsR/) and via Neuroconductor [https://neuroconductor.org/](https://neuroconductor.org/).  In addition to the PREVENT-AD neuroimaging, experiments in this paper additionally require the `boot` R package.  ANTsR, itself, has several dependencies which are identified at its webpage.
+We employ R version 3.3.1 ("Bug in Your Hair") for basic statistical processing. We also employ ANTsR version 0.3.3 [@TustisonShrinidhiWintermarkEtAl2015] for core image analysis, data organization and early development efforts.  ANTsR, itself, links to ITKR, ANTs and the ITK toolkits.  The specific versions of the concomitant libraries are documented within ANTsR software.  The only "pure ANTs" tool used in this analysis is the well-validated ants cortical thickness pipeline as above.  The remainder of the processing is performed within ANTsR, available both at http://stnava.github.io/ANTsR/ and via Neuroconductor https://neuroconductor.org/.  In addition to the PREVENT-AD neuroimaging, experiments in this paper additionally require the `boot` R package.  ANTsR, itself, has several dependencies which are identified at its webpage.
 
 
 # Methods
 
 Sparse canonical correlation analysis for neuroimaging (SCCAN) is a general purpose
-tool for "two-sided" multiple regression [@AvantsLibonRascovskyEtAl2014] that, along with other variants of CCA, can address such questions.  SCCAN, available within ANTsR [@AvantsDudaKilroyEtAl2015], exploits covariation across large datasets while imposing dataset-specific spatial regularization that helps prevent overfitting, especially important when $p >> n$ i.e. when the number of data measurements is much greater than the number of subjects on which these are measured.  SCCAN allows one to symmetrically compare one matrix of data to another and find linear relationships between them in a low-dimensional space, just like CCA, but with additional regularization parameters:
+tool for "two-sided" multiple regression [@AvantsLibonRascovskyEtAl2014].  SCCAN, available within ANTsR [@AvantsDudaKilroyEtAl2015], exploits covariation across large data-sets while imposing data-set-specific spatial regularization that helps prevent overfitting, especially important when $p >> n$ i.e. when the number of data measurements is much greater than the number of subjects on which these are measured.  SCCAN allows one to symmetrically compare one matrix of data to another and find linear relationships between them in a low-dimensional space, just like CCA, but with additional regularization parameters:
 $$
 x^\star, y^\star = argmax_{x,y} ~~\frac{x X^T~Y y}{\|Xx\|\|Yy\|}  - \gamma_x \| G^t_{\sigma x} \star x \|^+_1 - \gamma_y \| G^t_{\sigma y} \star y \|^+_1.
 $$
-Here, $\gamma_\cdot$ is a scalar weighting term for each variate that controls the impact of the $\ell_1^+$ penalty on the objective function (here denoted $\| \cdot \|^+_1$ ). The $\ell_1^+$ penalty differs from $\ell_1$ in that it sends negative values to zero.  The operator $G^t_{\sigma \cdot}$ performs spatial regularization (usually Gaussian or a modified Gaussian) on the solution vectors $x$ or $y$ where the amount of regularization is determined by $\sigma \cdot$. Much like singular value decomposition (SVD), the resulting subspace encodes a basis that may be used to reconstruct the original dataset. Also, like SVD, multiple solution vectors can be obtained from the above optimization which can be done in parallel or via deflation [@WittenTibshiraniHastie2009]. In comparison to methods which employ standard $\ell_1$ regularization, SCCAN has the benefit of inserting the spatial regularization inside the operator and projecting solutions to the non-negative space.  This means that the resulting solution vectors can be interpreted within the original units of the data i.e. similar to regions of interest. See Note 1.  The methods for the optimization of the SCCAN functional are beyond the scope of the current paper.  However, they rely on projected gradient descent on the SCCAN objective, as in [@KandelWangGeeEtAl2015].  See the compressed sensing literature for additional justification of these methods [@DonohoTsaigDroriEtAl2012; @BeckTeboulle2009; @BrediesLorenz2008; @BlumensathDavies2008; @HerrityGilbertTropp2006], which shows conditions under which such methods reach local optima (see Note 2).
+Here, $\gamma_\cdot$ is a scalar weighting term for each variate that controls the impact of the $\ell_1^+$ penalty on the objective function (here denoted $\| \cdot \|^+_1$ ). The $\ell_1^+$ penalty differs from $\ell_1$ in that it sends negative values to zero.  The operator $G^t_{\sigma \cdot}$ performs spatial regularization (usually Gaussian or a modified Gaussian) on the solution vectors $x$ or $y$ where the amount of regularization is determined by $\sigma \cdot$. Much like singular value decomposition (SVD), the resulting subspace encodes a basis that may be used to reconstruct the original data-set. Also, like SVD, multiple solution vectors can be obtained from the above optimization which can be done in parallel or via deflation [@WittenTibshiraniHastie2009]. In comparison to methods which employ standard $\ell_1$ regularization, SCCAN has the benefit of inserting the spatial regularization inside the operator and projecting solutions to the non-negative space.  This means that the resulting solution vectors can be interpreted within the original units of the data i.e. similar to regions of interest. See Note 1.  The methods for the optimization of the SCCAN functional are beyond the scope of the current paper.  However, they rely on projected gradient descent on the SCCAN objective, as in [@KandelWangGeeEtAl2015].  See the compressed sensing literature for additional justification of these methods [@DonohoTsaigDroriEtAl2012; @BeckTeboulle2009; @BrediesLorenz2008; @BlumensathDavies2008; @HerrityGilbertTropp2006], which shows conditions under which such methods reach local optima (see Note 2).
 
 ## Primer: Example 2D data
 
-Before proceeding to a more complex brain mapping study, we introduce a step-by-step example via a structural population dataset available in ANTsR.  By normalizing these brain slices to a common template, we can generate intuition about SCCAN covariance patterns via fast and easy to reproduce examples.  We employ six subjects and use the first as template.
-```{r exampler0,echo=TRUE,eval=TRUE}
+Before proceeding to a more complex brain mapping study, we introduce a step-by-step example via a structural population data-set available in ANTsR.  By normalizing these brain slices to a common template, we can generate intuition about SCCAN covariance patterns via fast and easy to reproduce examples.  We employ six subjects and use the first as template.
+```{r exampler0,echo=TRUE,eval=FALSE}
 library( ANTsR )
 fns = c( "r16", "r27", "r30", "r62", "r64", "r85" )
 ref = antsImageRead( getANTsRData( fns[1] ) )
+fns = fns[-1] # exclude first image because it is the template
 ```
-\noindent We first rigidly register the "moving" image to the template. We then deformably register result to the template.  We also compute the jacobian determinant and the difference images to fill in toy $X$ and $Y$ matrices.
-```{r exampler,echo=TRUE,eval=TRUE}
+\noindent We first rigidly register the "moving" images to the template. We then deformably register the rigid results to the template.  We also compute the jacobian determinant of the deformation field and the initial difference between the rigidly aligned image and the template.  The jacobian features are sent to the $X$ matrix and the difference images to the $Y$ matrix.
+```{r exampler,echo=TRUE,eval=FALSE}
 rX=4  # controls resolution for X matrix
 rY=8  # controls resolution for Y matrix
 maskX = getMask( ref )  %>% resampleImage(  c( rX, rX ) ) %>% iMath("MD",2)
@@ -115,7 +118,7 @@ for ( i in 1:length( fns ) )
 ```
 \noindent The minimal processing above makes clear the construction of the matrix representations and suggests there is no need for $X, Y$ to have the same number of columns. Given a matrix representation of image structure, we can express the relationship
 between these measurements in a lower dimensional space, via SCCAN.  This allows us to asses *the multivariate relationship between the initial difference image and the jacobian determinant*.  These should be related because the larger the initial difference, the greater the necessary deformation. Here is the code:
-```{r ex1,echo=TRUE,eval=TRUE}
+```{r ex1,echo=TRUE,eval=FALSE}
 ccaMatrixList = list( 
   scale( X, center=F, scale=F ), 
   scale( Y, center=F, scale=F ) ) # see Note section for more on these choices
@@ -129,11 +132,11 @@ sccanToy = sparseDecom2( ccaMatrixList,    # input data
 ```
 The parameters passed to the software relate directly to the optimization criterion.  More specifically:
 
-* The `sparseness` entry relates to the terms $\gamma_x, \gamma_y$. However, for user convenience, the units are expressed in terms of target percent sparseness (relative to the size of the mask). In the above example, the pseudo-eigenvectors will be roughly 10\% sparse, depending on the optimization.
-* The `smooth` and `cthresh` entries relate to the *operator* within the $\ell_1$ penalty term.  Above, we set $G_0.0^5$ where the numerator sets isolated voxel clusters below that size to zero.  Larger settings of $t$ lead to pseudo-eigenvectors that tend toward greater spatial connectivity.
+* The `sparseness` entry relates to the terms $\gamma_x, \gamma_y$. However, for user convenience, the units are expressed in terms of target percent sparseness (relative to the size of the mask). In the above example, the pseudo-eigenvectors will be roughly 25\% sparse, depending on the optimization outcome.
+* The `smooth` and `cthresh` entries relate to the *operator* within the $\ell_1$ penalty term.  Above, we set $G_0.0^5$ where the super-scripted $t$ sets isolated voxel clusters below $t$ to zero.  Larger settings of $t$ lead to pseudo-eigenvectors that tend toward greater spatial connectivity.
 * `nvecs` sets the number of pseudo-eigenvectors to compute.
-We also set `perms` which forces the algorithm to internally permute the data and recompute $p$ times, comparing the original to the permuted correlations.  This provides an empirical, if conservative, estimate of significance for each pseudo-eigenvector pair.  We can also visualize the first pair of pseudo-eigenvectors on the template.
-```{r exp,echo=FALSE,eval=TRUE,results='asis'}
+We also set `perms` which forces the algorithm to internally permute the data and recompute $p$ times, comparing the original to the permuted correlations.  This provides an empirical, if conservative, estimate of significance for each pseudo-eigenvector pair.  We can also visualize the first pair of pseudo-eigenvectors on the template.  See Figure 1 for an overview.
+```{r exp,echo=FALSE,eval=FALSE,results='asis'}
 knitr::kable( sccanToy$ccasummary )
 mydf = data.frame( JacobianE1 = sccanToy$projections[,1], DeltaE1 = sccanToy$projections2[,1] )
 mdl = lm( JacobianE1 ~ DeltaE1, data=mydf )
@@ -147,15 +150,14 @@ invisible( plot( ref, list( myevX1, myevY1 ),
   color.overlay = c( 'magma', 'viridis'), window.overlay = c( 0.1, 1 ) ) )
 ```
 
-Note the rapid initial decay of the correlations computed by SCCAN.  The first pseudo-eigenvector pair captures the majority of the covariation and subsequent solutions are less powerful.  The overlay on the template identifies the regions (in magma colormap) that maximize the correlation with the intial difference (in viridis colormap).  Finally, note that classic CCA would not be able to compute such an interpretable solution.  First, it is constrained to the case where $n > p$ and, second, solutions would be both signed and everywhere non-zero (i.e. not sparse).
 
 ## Structural networks and resting connectivity in PREVENT-AD
 
-Age and cognition impact structural covariance [@FranzmeierBuergerTeipelEtAl2017] as well as resting connectivity [@FranzmeierBuergerTeipelEtAl2017].  If structural networks covary with resting connectivity, then we can exploit SCCAN to identify sparse sub-networks from both types of data that may --- in downstream hypothesis testing --- relate to age, cognition or, potentially, disease status.  We follow a "clustering before hypothesis testing" approach similar to that proposed in eigenanatomy [@KandelWangGeeEtAl2015] but where the clustering of the imaging data (dimensionality reduction) is based on covariation across modalities rather than within a single modality.  Our study design is therefore similar to principal component regression.  We first perform dimensionality reduction on the high-dimensional data and subsequently build a general linear model that relates the low-dimensional representation to population variables.  Principal component regression uses the SVD to reduce the data and may plug the left eigenvectors into a regression model which may be investigated for significance.  The procedure below is similar but uses SCCAN instead of SVD and evaluates the validity of our hypothesis using both model significance as well as cross-validation.
+Age and cognition impact structural covariance [@KhundrakpamLewisReidEtAl2017] as well as resting connectivity [@FranzmeierBuergerTeipelEtAl2017].  If structural networks covary with resting connectivity, then we can exploit SCCAN to identify sparse sub-networks from both types of data that may --- in downstream hypothesis testing --- relate to age, cognition or, potentially, disease status.  To test this question, we follow a "clustering before hypothesis testing" approach similar to that proposed in eigenanatomy [@KandelWangGeeEtAl2015].  The present works differs in that the low-dimensional projection of the imaging data (dimensionality reduction) is based on covariation across modalities rather than within a single modality.  Our study design is therefore similar to principal component regression.  We first perform dimensionality reduction on the high-dimensional data and subsequently build a general linear model that relates the low-dimensional representation to population variables.  Principal component regression uses the SVD to reduce the data and may plug the left eigenvectors into a regression model which may be investigated for significance.  The procedure below is similar but uses SCCAN instead of SVD and evaluates the validity of our hypothesis using both model significance as well as cross-validation.
 
-The public version of the PREVENT-AD dataset releases very limited demographic information, primarily age and gender.  We use this data to test the hypothesis that multivariate covariation between cortical thickness networks and resting correlation matrices (assessed in the Power nodal system) will identify age-related sub-networks.  Furthermore, we will assess --- via cross-validation --- whether these sub-networks improve the cross-validated prediction of age when used together in the same model.  That is, we hope to show that cortical thickness and resting connectivity provide complementary information regarding brain aging in this cohort.
+The public version of the PREVENT-AD data-set releases very limited demographic information, primarily age and gender.  We use this data to test the hypothesis that multivariate covariation between cortical thickness networks and resting correlation matrices (assessed in the Power nodal system) will identify age-related sub-networks.  Furthermore, we will assess --- via cross-validation --- whether these sub-networks improve the cross-validated prediction of age when used together in the same model.  That is, we hope to show that cortical thickness and resting connectivity provide complementary information regarding brain aging in this cohort.
 
-The input data, as in the toy example, comprises two sets of high-dimensional measurements.  Given our preprocessed data, we must now consider the necessary steps for running SCCAN and performing hypothesis testing in PREVENT-AD:
+The input data, as in the toy example, comprises two sets of high-dimensional measurements.  Given our preprocessed data, we must now consider the necessary steps for running SCCAN and performing hypothesis testing in PREVENT-AD.
 
 ### Step 1: Define the $X, Y$ matrix content.
 
@@ -167,23 +169,23 @@ The input data for the $Y$ matrix is the upper triangle of the Power node correl
 
 This joint $X, Y$ matrix pair enables us to use SCCAN directly.  However, we must first set a few parameters, as noted in the prior example. 
 
-* Matrix scaling:  This is an often overlooked component of dimensionality reduction, thought is has a large impact (See Note X).  We recommend the default option of simply centering the data before passing to SCCAN.  This avoids forcing all columns to have unit variance which may inflate the impact of noisy data sources (see Note X for a robust alternative).
+* Matrix scaling:  This is an often overlooked component of dimensionality reduction.  We recommend the default option of simply centering the data before passing to SCCAN.  This avoids forcing all columns to have unit variance which may inflate the impact of noisy data sources (see Note 3 for a robust alternative).
 
 * Embedded smoothing within the optimization:  Regularization acts as a hedge against overfitting.  In SCCAN, this involves not only the sparsity levels but also setting the values for $G_\sigma^t$ which is the operator within the $\ell_1$ norm.  In this example, we only need consider the impact on the thickness pseudo-eigenvectors.  In general, we recommend setting the $\sigma$ value to be 0.5 for voxel data which provides sufficiently smooth results in nearly every example we have encountered, even when little to no prior smoothing is employed.  We also choose a cluster threshold (the $t$ parameter) of 1,000 which focuses results on the scale of roughly a 10 voxel cube (a 1cm$^3$ volume, given 1mm input data.) 
 
 * Setting the number of pseudo-eigenvectors:  As the goal of this study is to ultimately use the computed pseudo-eigenvectors within a general linear model, we elect to compute relatively few pairs.  Here, we set `nvec=6` and will only employ the top $k$ with correlations greater than a given threshold in our evaluation below.  Computation time is also a concern, here, due to the relatively high dimensional data for which we want a compressed and interpretable representation (SCCAN computation scales roughly linearly with `nvec`, given fixed matrices.)
 
-* Searching for the optimal sparsity settings: Choosing hyperparameters can be challenging unless one has substantial experience with a methodology or specific prior hypotheses about a dataset.  Given the relative novelty of this application, we cannot explicitly recommend a given sparsity level for the computation of regularized sparse canonical correlation.  In this case, our best option is to exploit the low cost of modern computing and search over a reasonable range of potential sparsity values.  We define "reasonable" as set of sparsity levels for which we expect to be able to make a visual interpretation of the derived networks.  In several prior SCCAN studies, we have searched over a sparsity parameter space that allows solutions to range from very sparse ($1\%$) up to $15\%$ of data coverage.  In the latter case, we can expect a component to cover roughly 15\% of the voxels.  Our recommended spatial regularization, above, also will restrict the solution to be spatially contiguous down to the selected scale.  In this application, we search regular increments of sparsity from 0.01 to 0.15 as a fraction of the number of columns in $X$ or $Y$.  This leads to a $10 \times 10$ parameter search space which we send to a compute cluster.
+* Searching for the optimal sparsity settings: Choosing hyperparameters can be challenging unless one has substantial experience with a methodology or specific prior hypotheses about a data-set.  Given the relative novelty of this application, we cannot explicitly recommend a given sparsity level for the computation of regularized sparse canonical correlation.  In this case, our best option is to exploit the low cost of modern computing and search over a reasonable range of potential sparsity values.  We define "reasonable" as set of sparsity levels for which we expect to interpret the derived networks.  In several prior SCCAN studies, we have searched over a sparsity parameter space that allows solutions to range from very sparse ($1\%$) up to $15\%$ of data coverage.  In the latter case, we can expect a component to cover roughly 15\% of the voxels.  Our recommended spatial regularization, above, also will restrict the solution to be spatially contiguous down to the selected scale.  In this application, we search regular increments of sparsity from 0.01 to 0.15 as a fraction of the number of columns in $X$ or $Y$. If we parcellate the search region into K equal segments, This leads to a $K \times K$ parameter search space which we send to a compute cluster.
 
 ```{r renfn,echo=FALSE,eval=TRUE}
+fig1fn = path.expand( "~/Downloads/rsfhtml/fig1.pdf" )
+fig2fn = path.expand( "~/Downloads/rsfhtml/fig2.pdf" )
 cvfn = path.expand( "~/Downloads/rsfhtml/cvResults.png" )
 volfn = path.expand( "~/Downloads/rsfhtml/zzz.png" )
 n1fn = path.expand( "~/Downloads/rsfhtml/network2.png" )
 n2fn = path.expand( "~/Downloads/rsfhtml/network4.png" )
 ```
 
-
-![Rendering of the overlay](`r cvfn`)
 
 ### Step 3: Assess the validity of the SCCAN models.
 
@@ -197,41 +199,20 @@ $$
 $$
 Age = \sum_{i=1}^k ( \beta^x_i~ X x_i + \beta^y_i ~ Y y_i  ) + Sex + \epsilon 
 $$
-We use $k$-folds cross-validation to assess the relative accuracy of each equation rather than using model-based interpretation of these prediction equations.  In short, we ask how well --- in left out data --- each model can predict age based on a subset of training data.  We repeatedly perform 18-fold validation (training on 75\% and testing on 25\% data) in order to gain a distribution of performance for each model, using the `boot` package in R. This enables us to find out which set of sparseness parameters leads to the most predictive model.  In essence, this searches over the space of possible hypotheses regarding structure-function-age interactions.   While it does introduce a multiple comparisons problem, it is only on the order of the number of searched models, rather than the number of voxels or number of components.  Thus, it remains fairly conservative.  Alternative methods for assessing the validity of hyperparameters are discussed in Note X.
+We use $k$-folds cross-validation to assess the relative accuracy of each equation rather than using model-based interpretation of these prediction equations.  In short, we ask how well --- in left out data --- each model can predict age based on a subset of training data.  We repeatedly perform 18-fold validation (training on 75\% and testing on 25\% data) in order to gain a distribution of performance for each model, using the `boot` package in R. This enables us to find out which set of sparseness parameters leads to the most predictive model.  In essence, this searches over the space of possible hypotheses regarding structure-function-age interactions.   While it does introduce a multiple comparisons problem, it is only on the order of the number of searched models, rather than the number of voxels or number of components.  Thus, it remains fairly conservative.  Alternative methods for assessing the validity of hyperparameters and candidate solutions are discussed in Note 4 and Note 5.
 
 
 ### Step 4: Visualize and interpret the multivariate results.
 
-Under our cross-validation parameter search, the best model yields good predictive value with an average error of between 4.5 and 5.0 years by using both modalities together.  In comparison, either the thickness or resting correlation model alone yields error of over 5.5 years, over a 1 year gap.  While it is unclear if this is a clinically meaningful measurement of "brain age", it does suggest that resting state correlations change in concert with structural networks along the aging spectrum.  Furthermore, estimating the significance of this difference in performance is perhaps less descriptive than inspection of the performance histograms shown in Figure FIXME.
-```{r bestmodel,results='asis',echo=FALSE}
-lmdf = read.csv( "~/Downloads/rsfhtml/eanatGraph_t_g_TRUE_0.075x0.125_lm.csv" )
-lmdf = lmdf[-1,]
-colnames( lmdf )[1]="Predictor"
-lmdf[,"Predictor"] = c( "Sex", paste("Thk_e", 1:4 ,sep=''), paste("RSF_e", 1:4,sep='' ) )
-options( digits =  2 )
-knitr::kable( lmdf )
-```
+The results of our cross-validation parameter search (see Figure 2) show that the best model uses both modalities and yields good predictive value with an average error of between 4.5 and 5.0 years.  In comparison, either the thickness or resting correlation model alone yields error of over 5.5 years, a 1 year reduction.  While it is unclear if this is a clinically meaningful measurement of "brain age", it does suggest that resting state correlations change in concert with structural networks along the aging spectrum.  The model, which explains over 50\% of the age variance, is not improved by the inclusion of mean or max framewise displacement or brain volume as covariates. The improvement due to both modalities may be best illustrated by the performance histograms shown in Figure 3. The best model used sparseness 0.075 for thickness and 0.125 for resting bold.  
 
-The best models used sparseness 0.075 for thickness and 0.125 for resting bold.  One key advantage of the regularization operator $\| G_\sigma^t \star \cdot \|^+_1$ is that it leads to unsigned pseudo-eigenvectors that may be displayed and interpreted with anatomical specificity. Figure 2 shows that there are two networks implicated as "significant" in the best linear model.  The two networks Thk-e2 (cool) and Thk-e4 (hot) (the 2nd and 4th pseudo-eigenvectors for thickness) have alternating sign indicating that it is a difference between thickness in these networks that is predictive of age.  Similarly, resting state pseudo-eigenvectors contribute significantly to the model regression.  These also have different sign, again suggesting that differences in patterns of connectivity relate to the aging process.  These patterns are also visualized in Figure 2, where we highlight (in the brain rendering) only the strongest of the sparse correlations shown in the heatmap.
+One key advantage of the regularization operator $\| G_\sigma^t \star \cdot \|^+_1$ is that it leads to unsigned pseudo-eigenvectors that may be displayed and interpreted with anatomical specificity. Figure 2 shows that there are two networks implicated as "significant" in the best linear model.  The two networks Thk-e2 (cool) and Thk-e4 (hot) (the 2nd and 4th pseudo-eigenvectors for thickness) have alternating sign indicating that it is a difference between thickness in these networks that is predictive of age.  Similarly, resting state pseudo-eigenvectors contribute significantly to the model regression.  These also have different sign, again suggesting that differences in patterns of connectivity relate to the aging process.  These patterns are also visualized in Figure 2, where we highlight (in the brain rendering) only the strongest of the sparse correlations shown in the heatmap.
 
-Finally, ..... 
+Finally, we note that the regression model suggests four critical predictors.  Furthermore, when these predictors are visualized in the brain, they are also suggestive.  For cortical thickness, one bilateral sub-component of Thk-e4 is likely to be part of a network convergence site (hub) in the inferior parietal lobe, the angular gyrus.  The bilateral anterior and inferior temporal region here may be a semantic hub. The anterior portion of the middle frontal gyrus may relate to working memory and perhaps be a hub for attention networks.  Thk-e2, on the other hand, focuses more on the medial temporal lobe network. Das et al. describe the MTL network as "an area with extensive bi-directional connections to the rest of the brain, and thus often thought to integrate complex sets of information from multiple sensory modalities" [@DasPlutaMancusoEtAl2015] but also highlights a second network hub, the precuneus.  The best predictors in the network correlation are not as easy to interpret but, via visualization, suggest that changes in superior and anterior resting connectivity are relevant in one component.  In the other component, we see a pattern that suggests changes in posterior connectivity.  Overall, this analysis suggests that age-related structural changes in hub regions may relate to overall age-related changes in network connectivity in the PREVENT-AD cohort, a group at high risk for developing AD.  Whether these findings would be replicated in a purely control cohort is not yet known. Further work is therefore needed in larger data-sets to confirm the relevance of these findings and the value of this methodology, more generally.
 
 <!--* Table of regions for thickness  784557  voxels, Connections for rsf  36315 -->
 
 <!-- Figure for thickness and rsf together -->
-
-
-```{r cvgraph}
-################################################################################
-library( ggplot2 )
-ddd = read.csv( "~/Downloads/rsfhtml/eanatGraph_t_g_TRUE_0.075x0.125_cv.csv" )
-cukedf = data.frame( AgeError = sqrt( as.numeric( data.matrix( ddd ) ) ),
-  test = c( rep( "Both", nrow(ddd) ),
-            rep( "Thickness", nrow(ddd) ),
-            rep( "Resting Connectivity", nrow(ddd)  ) )  )
-ggplot(cukedf, aes(AgeError, fill = test)) + geom_density(alpha = 0.2) + 
-  ggtitle("Average error over 50 runs of k-folds cross-validation")
-```
 
 
 ```{r ren,echo=FALSE,eval=FALSE}
@@ -255,6 +236,19 @@ antsrVol( template, list( abs(wjtstat4), abs(wjtstat2) ), overlayLimits = rng,
           magnificationFactor = 2.5, colormap = c('hot','cool'),
           antspath = ap, filename = volfn )
 volfn = paste( volfn, '.png', sep='' )
+ch2<-getANTsRData("ch2")
+ch2a<-getANTsRData("ch2a")
+ch2b<-getANTsRData("ch2b")
+ch2 = antsImageRead( ch2 )
+ch2a = antsImageRead( ch2a )
+ch2b = antsImageRead( ch2b )
+data( aal )
+mvcoord = getMultivariateTemplateCoordinates( 
+  list( template, wjtstat2, wjtstat4 ),
+  list( ch2, ch2b, ch2a ), threshparam = 0.1,
+  clustparam = 2,  pvals = c( 0.01, 0.00 ),
+  identifier = c("-inferior-temporal","-superior-frontal") )
+write.csv( mvcoord$networks, "~/Downloads/rsfhtml/mvcoord.csv", row.names = F )
 ```
 
 ```{r ren2,echo=FALSE,eval=FALSE}
@@ -291,22 +285,6 @@ antsrSurf( wm2, inflationFactor=255,quantlimits=c(0.5,1),rotationParams = rp, fi
 
 ```
 
-
-![Rendering of the overlay](`r volfn`)
-
-```{r gvz,echo=FALSE,eval=TRUE}
-mygraph = read.csv( path.expand( "~/Downloads/rsfhtml/eanatGraph_t_g_TRUE_0.075x0.125cca2k.csv" ) )
-gmat = matrix( nrow=270, ncol=270, 0 )
-data( "powers_areal_mni_itk" )
-# rownames( gmat ) = colnames( gmat ) = powers_areal_mni_itk$SystemName
-gmat[ upper.tri( gmat ) ] = mygraph[,3]
-gmat[ gmat < quantile( gmat, 0.99 )] = 0
-pheatmap::pheatmap( gmat, cluster_rows = F, cluster_cols = F, main='RSF - eigenanatomy component 2' )
-gmat2 = matrix( nrow=270, ncol=270, 0 )
-gmat2[ upper.tri( gmat2 ) ] = mygraph[,5]
-gmat2[ gmat2 < quantile( gmat2, 0.99 )] = 0
-pheatmap::pheatmap( gmat2, cluster_rows = F, cluster_cols = F, main='RSF - eigenanatomy component 4' )
-```
 
 
 ```{r gvzren,echo=FALSE,eval=FALSE}
@@ -355,15 +333,11 @@ rgl::par3d(userMatrix = id )
 ```
 
 
-![RSF network 2](`r n1fn`)
-
-![RSF network 4](`r n2fn`)
-
 # Notes
 
 ## Note 1.
 
-Consider that a set of regions of interest may be considered as two-level functions in a common voxel space.  Then, we represent $k$ regions of interest as an "ROI matrix" $\mu$ of dimension $k \times p$.  If population data is normalized to a common space (an assumption behind our $X$ and $Y$ matrices), then the region of interest totals may be computed via $r_X = X \mu^T$.  This operation is analogous to what we achieve with SCCAN, but in a data-driven manner.
+Consider that a set of regions of interest may be considered as two-level functions in a common voxel space.  Then, we represent $k$ regions of interest as an "ROI matrix" $\mu$ of dimension $k \times p$.  If population data is normalized to a common space (an assumption behind our $X$ and $Y$ matrices), then the region of interest totals may be computed via $r_X = X \mu^T$.  This operation is analogous to what we achieve with SCCAN via data-driven dual image decomposition.
 
 ## Note 2.
 
@@ -371,19 +345,129 @@ Iterative thresholding methods are known to be sensitive to initialization. ANTs
 
 ## Note 3
 
-At times, it may be useful to visually investigate candidate solutions generated by machine learning algorithms before passing them on to a biological model.  The researcher might treat the SCCAN output as "suggested hypotheses."  Candidate solutions may be rejected before passing them down to the stage wherein they are tested against variables that will compromise power (age in the example above).
-
-## Note 4
-
-Permutation is, at times, recommended for evaluating significance [@WittenTibshiraniHastie2009].  However, in our experience this may be anti-conservative in $p >> n$ datasets.  An effective alternative is to employ cross-validation of the correlation with permutation.  That is, rather than asking "how well do these correlation hold up under permutation?", one might ask "how does cross-validation performance change between real and permuted data"?  This latter strategy may be more informative in some datasets.
-
-## Note 5
-
-Robust data transformations can address the sensitivity of correlation-based analyses to outliers [@WilmsCroux2016].  ANTsR provides a function `robustMatrixTransform` which transforms each data-point by a rank transform and thus acts as a general purpose and easy to use safeguard against such issues (although we note that careful data inspection is always a superior approach).  Referring back to our example dataset, we can see how this option can be used to create a zero-centered rank transform:
+Robust data transformations can address the sensitivity of correlation-based analyses to outliers [@WilmsCroux2016].  ANTsR provides a function `robustMatrixTransform` which transforms each data-point by a rank transform and thus acts as a general purpose and easy to use safeguard against such issues (although we note that careful data inspection is always a superior approach).  Referring back to our example data-set, we can see how this option can be used to create a zero-centered rank transform:
 
 ```{r myrob,eval=FALSE}
 mat  = replicate( 2, rnorm( 5 ) )
 rmat = robustMatrixTransform( mat )
 ```
+
+## Note 4
+
+Permutation is, at times, recommended for evaluating significance [@WittenTibshiraniHastie2009].  However, in our experience this may be anti-conservative in $p >> n$ data-sets.  An effective alternative is to employ cross-validation of the correlation with permutation.  That is, rather than asking "how well do these correlations hold up under permutation?", one might ask "how does cross-validation performance change between real and permuted data"?  This latter strategy may be more informative in some data-sets.
+
+## Note 5
+
+At times, it may be useful to visually investigate candidate solutions generated by machine learning algorithms before passing them on to a biological model.  The researcher might treat the SCCAN output as "suggested hypotheses."  Candidate solutions may be rejected before passing them down to the stage wherein they are tested against variables that will compromise power (age in the example above).
+
+
+\newpage
+
+```{r bestmodel,results='asis',echo=FALSE}
+lmdf = read.csv( "~/Downloads/rsfhtml/eanatGraph_t_g_TRUE_0.075x0.125_lm.csv" )
+lmdf = lmdf[-1,]
+colnames( lmdf )=c("Predictor","Beta","SE","T-stat","P-value")
+lmdf[,"Predictor"] = c( "Sex", paste("Thk_e", 1:4 ,sep=''), paste("RSF_e", 1:4,sep='' ) )
+options( digits =  2 )
+knitr::kable( lmdf , caption="The regression results for the best model.  Thk indicates thickness predictors; RSF indicates the resting correlation matrix predictors.")
+```
+
+
+\newpage
+
+
+```{r bestmodelmvcoord,results='asis',echo=FALSE}
+lmdf = read.csv( "~/Downloads/rsfhtml/mvcoord.csv" )
+options( digits =  2 )
+knitr::kable( lmdf[ , c(1:4,6:8) ] , caption="The anatomical coordinates for the two most important thickness pseudo-eigenvectors in the best model.  Recall that these are multivariate regions of interest.  This table identifies the key loci detailing the spatial extent of the pseudo-eigenvector (referred to in the table as *_node).  The NetworkID column shows an overall descriptive name differentiating each pseudo-eigenvector.  The x, y, z coordinate columns show the MNI space coordinates.  The Brodmann and AAL columns give an approximate anatomical region/label for each node. The pval column shows the pval for the overall eigenvector and shows NA for the sub-nodes.")
+```
+
+
+\newpage
+
+![The input jacobian and difference images are in panel (a).  The low-dimensional correlation produced by SCCAN is in panel (b).  Panel (c) shows the first pseudo-eigenvector overlaid on the template.  The first pseudo-eigenvector pair captures the majority of the covariation and subsequent solutions are less powerful.  The overlay on the template identifies the regions (in magma colormap) that maximize the correlation with the intial difference (in viridis colormap).  Finally, note that classic CCA would not be able to compute such an interpretable solution.  First, it is constrained to the case where $n > p$ and, second, solutions would be both signed and everywhere non-zero (i.e. not sparse).](`r fig1fn`)
+
+\newpage
+
+![Panel (a) visualizes the results of the hyperparameter search where we display the squared error over a selection of the parameter space and for both modalities (left column), the thickness modality alone (center column) and the resting state network features alone (right column).  Darker blue indicates better performance.  Panel (b) shows the best model's two most significant thickness pseudo-eigenvectors overlaid on the template image.  Panel (c) shows the sub-networks extracted from SCCAN in terms of both a heatmap and within the glass brain space.  Power nodes are shown along with the most heavily weighted edges in the SCCAN pseudo-eigenvectors.  Again, we display the two most significant resting network pseudo-eigenvectors in the dual modality model.](`r fig2fn`)
+
+\newpage
+
+```{r gvz,echo=FALSE,eval=FALSE}
+mygraph = read.csv( path.expand( "~/Downloads/rsfhtml/eanatGraph_t_g_TRUE_0.075x0.125cca2k.csv" ) )
+gmat = matrix( nrow=270, ncol=270, 0 )
+data( "powers_areal_mni_itk" )
+# rownames( gmat ) = colnames( gmat ) = powers_areal_mni_itk$SystemName
+gmat[ upper.tri( gmat ) ] = mygraph[,3]
+gmat[ gmat < quantile( gmat, 0.99 )] = 0
+pheatmap::pheatmap( gmat, cluster_rows = F, cluster_cols = F, main='RSF - eigenanatomy component 2' )
+gmat2 = matrix( nrow=270, ncol=270, 0 )
+gmat2[ upper.tri( gmat2 ) ] = mygraph[,5]
+gmat2[ gmat2 < quantile( gmat2, 0.99 )] = 0
+pheatmap::pheatmap( gmat2, cluster_rows = F, cluster_cols = F, main='RSF - eigenanatomy component 4' )
+```
+
+
+
+```{r cvgraph,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE}
+################################################################################
+library( ggplot2 )
+ddd = read.csv( "~/Downloads/rsfhtml/eanatGraph_t_g_TRUE_0.075x0.125_cv.csv" )
+cukedf = data.frame( AgeError = sqrt( as.numeric( data.matrix( ddd ) ) ),
+  test = c( rep( "Both", nrow(ddd) ),
+            rep( "Thickness", nrow(ddd) ),
+            rep( "Resting Connectivity", nrow(ddd)  ) )  )
+ggplot(cukedf, aes(AgeError, fill = test)) + geom_density(alpha = 0.2) + 
+  ggtitle("Average error over 50 runs of k-folds cross-validation")
+```
+\noindent Figure 3: Cross-validation results establish that the best model's performance shows a clear advantage of using both modalities together to predict subject age.
+
+```{r stats0,eval=FALSE,echo=FALSE}
+demogfn = "./demog.csv"
+demog = read.csv( demogfn )
+sel = demog$SESSION == "Baseline"
+demog = demog[ sel, ]
+demog$AGE_AT_SCAN_1 = as.numeric( as.character(  demog$AGE_AT_SCAN_1 ) )
+brn = Sys.glob("antsCorticalThickness/*/*_session_1_BrainSegmentation.nii.gz" )
+bv = myfd = rep( NA, nrow( demog ) )
+for ( i in 1:nrow( demog ) ) bv[i] = sum( thresholdImage( antsImageRead( brn[i] ), 1, 6 ) )
+myfdfn = Sys.glob( "antsrsfmri/*/*session_1*ummary.csv" )
+for ( i in 1:nrow( demog ) ) myfd[i] = mean( read.csv( myfdfn[ i ] )$FD )
+bvdf = data.frame(
+  cbind( SUBID = demog$SUBID, brainVol = bv, FD=myfd ) )
+write.csv( bvdf, 'brainVolSession1.csv', row.names=F )
+tt = myfd
+subsel = tt < quantile( tt, 0.9 )
+```
+
+
+```{r stats1,eval=FALSE,echo=FALSE}
+dd=read.csv("eanatGraph_t_g_TRUE_0.075x0.125_demog.csv")
+bv=read.csv( 'brainVolSession1.csv' )
+subsel = bv$FD < quantile( bv$FD, 0.9 )
+ee = cbind( dd, bv=bv$brainVol[subsel], fd=bv$FD[subsel] )
+summary(lm( AGE_AT_SCAN_1 ~ . , data=ee ) )
+demog = dd[,1:2]
+proj = dd[,3:10]
+proj1 = dd[,3:6]
+proj2 = dd[,7:10]
+ldemog = cbind( demog, proj )
+ldemog1 = cbind( demog, proj1 )
+ldemog2 = cbind( demog, proj2 )
+nruns = 50
+demoglist = list( ldemog, ldemog1, ldemog2 )
+mycvresults = matrix( nrow = nruns, ncol = length( demoglist ) )
+kset = round( nrow(demog)*0.25 )
+for ( myrun in 1:nruns )
+for ( dd in 1:length( demoglist )) {
+  mdl2 = glm(  AGE_AT_SCAN_1 ~ . , data=demoglist[[dd]] )
+  ff=boot::cv.glm( demoglist[[dd]] , mdl2,  K = kset )
+  mycvresults[ myrun , dd] = ff$delta[1]
+  }
+fres = colMeans( mycvresults, na.rm=T )
+knitr::kable( data.frame( fres ) )
+```
+
+\newpage 
 
 # References

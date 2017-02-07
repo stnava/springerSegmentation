@@ -97,7 +97,7 @@ In the remainder of this chapter, we will detail the steps involved in developin
 
 FIXME: figure showing system - something like [figure 1, maybe 1D here](http://msb.embopress.org/content/msb/12/7/878.full.pdf)
 
-![FIXME figure showing system](/Users/bavants/code/writing/springerSegmentation/figures/nothing.png)
+![FIXME figure showing system](/Users/bavants/code/writing/springerSegmentation/figures/probability_maps/arch2.png)
 
 
 # MATERIALS
@@ -151,8 +151,7 @@ In order to define ground truth data for the DLBS, we took the six tissue segmen
 # 28398 age is 83
 ```
 
-
-![Network architecture (FIXME REDO).](/Users/bavants/code/writing/springerSegmentation/figures/convdeconv.png)
+<!--  ![Network architecture (FIXME REDO).](/Users/bavants/code/writing/springerSegmentation/figures/convdeconv.png) -->
 
 
 ![Three images randomly selected from the DLBS cohort.](/Users/bavants/code/writing/springerSegmentation/figures/cohortSelection.jpg)
