@@ -294,9 +294,15 @@ Besides the two main considerations of model depth and kernel size, there are va
 
 ### 2.2 objective (loss) function 
 
-The loss function of a deep convolutional network, or any machine learning model for that matters, tells us how well we are doing at the particular task in which we are interested. In our case, we are broadly interested in classifying pixels from 2D slices, and eventually 3D voxels, into its correct tissue class. It is therefore easy to naively believe that training a model to simply maximize classification accuracy would lead to strong performance. This turns out not to be the case, as the gradients of the loss function become highly volatile and difficult to calculate, leading to quick convergence to a highly sub-optimal solution (CITATION). 
+The loss function of a deep convolutional network, or any machine learning model for that matters, tells us how well we are doing at the particular task in which we are interested. In our case, we are broadly interested in classifying pixels from 2D slices, and eventually 3D voxels, into its correct tissue class. It is therefore easy to naively believe that training a model to simply maximize classification accuracy would lead to strong performance. This turns out not to be the case, as the gradients of the loss function become highly volatile and difficult to calculate, leading to quick convergence to a highly sub-optimal solution.
 
 Instead, we adopt the commonly used <i>cross-entropy</i> loss function, which instead measures an information theoretic notion of how far away our predicted class distribution lies from the true class value. Since the predicted distribution is valued between 0 and 1, and indeed sums to 1 across all possible classes for a given pixel/voxel, the class distribution essentially gives us a confidence value for our predictions. Our goal is to push this distribution to be perfectly sure of its predictions for each pixel/voxel, meaning it will have a 1 in the correct class index and a 0 elsewhere. The correspondance to the one-hot representation of the ground-truth image should now be clear. 
+
+The cross-entropy function can be represented as follows:
+
+$H(p,q) = -\Sigma_x p(x) \cdot log(q(x))$
+
+where $p(x)$ is the predicted probability distribution over all possible tissue classes for a single voxel and $q(x)$ is the true distribution represented as a one-hot vector with a one in the correct tissue class index and a zero everywhere else. Thus, by minimizing this function the optimization is driving the model to predict the correct class labels while allowing flexibility through use of a probabilistic distribution. 
 
 In practice, the more confident our class distribution is in its prediction, the better the model performs. Moreover, we can leverage low-confidence class predictions by using an ensemble of different models and hoping that an unsure prediction for one model in a given pixel/voxel will be "saved" by a high-confidence prediction in that same location by another model in the ensemble. A short review of alternative loss functions and problem formulations is provided in the notes section.
 
