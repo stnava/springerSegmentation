@@ -25,7 +25,7 @@ csl: springerprotocols.csl
 
 # Abstract
 
-Convolutional neural networks are poised to become a standard technology in neuroimage analysis.  This general purpose framework is capable of integrating imaging information across both spatial scales and modalities acquired from biomedical images.  Furthermore, emerging deep learning software is designed for processing large data sets efficiently.  Complemented with the ability to fuse imaging and non-imaging data, these features make deep learning and convolutional networks an integral tool in the future of brain mapping.  Here, we discuss both the context and technology of deep learning and detail the issues of problem definition, network design and evaluation that neuroimaging researchers may encounter.  We will focus primarily on applying convolutional-deconvolutional networks to supervised brain segmentation.
+Convolutional neural networks are poised to become a standard technology in neuroimage analysis.  This general purpose framework is capable of integrating imaging information across both spatial scales and modalities acquired from biomedical images.  Furthermore, emerging deep learning software is designed for processing large data sets efficiently.  Complemented with the ability to fuse imaging and non-imaging data, these features make deep learning and convolutional networks an integral tool in the future of brain mapping.  Here, we discuss both the context and technology of deep learning and detail the issues of problem definition, network design and evaluation, and interpretation that neuroimaging researchers may encounter.  We will focus primarily on applying convolutional-deconvolutional networks to supervised brain segmentation.
 <!--and provide a comparison with joint label fusion, another state of the art method addressing this problem. -->
 
 # Introduction
@@ -177,9 +177,9 @@ This section must be comprehensive. Do not send the reader away to find informat
 particular step in another reference. All relevant practical detail must be given in this section
 -->
 
-The problem of segmenting brain image voxel into distinct tissue classes is inherently a pixel- or voxel-wise classification problem. The input to the model is a 2D slice of a 3D brain image, and the model outputs a 2D image of equal shape but with each pixel assigned to one of the possible tissue classes.
+The problem of segmenting brain image voxel into distinct tissue classes using deep learning models is inherently a pixel- or voxel-wise classification problem. The input to the model is a 2D slice of a 3D brain image, and the model outputs a 2D image of equal shape but with each pixel assigned to one of the possible tissue classes.
 
-In this work, we use an ensemble of three 2D convolutional-deconvolutional architectures, each trained on full image slices belonging exclusively to either the axial, saggittal, or coronal plane. Our work is one of the few to actually train on entire slices, wheras previous work in this area has mostly involved training on image patches. The slice-based approach is undoubedtly the preferred method, as the patch-based approach is computationally infeasible for segmenting entire images (see later section).
+In this work, we used a probabilistic voting ensemble of three 2D convolution-deconvolution architectures, each trained on full image slices belonging exclusively to either the axial, saggittal, or coronal plane. Our work is one of the few to actually train on entire image slices, wheras previous work in this area has mostly involved training on image patches. The slice-based approach is undoubedtly the preferred method, as the patch-based approach is computationally infeasible for segmenting entire images due to the large number of patches which must be sampled.
 
 The end-to-end process we took for training a deep convolutional network for simulataneous brain extraction and tissue segmentation consists of the following steps:
 
@@ -201,7 +201,10 @@ The end-to-end process we took for training a deep convolutional network for sim
       * test on completely held-out data
   * Interpretation Phase
       * interpret the results and outcomes
+  * Distribution Phase
+      * distribute and package our code for community use and feedback
 
+These phases may be roughly grouped into problem identification, network design and evaluation, and interpretation stages.
 
 \noindent See Figure 1 for an overview of this system.  
 
