@@ -36,7 +36,7 @@ ffn   = paste(bd,'springerSegmentation/figures/nothing.png',sep='')
 
 # Abstract
 
-Convolutional neural networks are poised to become a standard technology in neuroimage analysis. This general purpose framework   learns both low-level and high-level features directly from images, making them ideal for image segmentation. <!-- Furthermore, emerging deep learning software is designed for processing large data sets efficiently.  Complemented with the ability to fuse imaging and non-imaging data, these features make deep learning and convolutional networks an integral tool in the future of brain mapping.  --> We present a novel convolutional-deconvolutional network architecture designed for efficient three-dimensional, supervised brain segmentation. We detail issues of problem definition, network design, evaluation and interpretation that we encountered in this effort.  We also provide evidence that such networks can achieve accuracy in a matter of seconds that rivals what traditional methods may take over an hour to compute.
+Convolutional neural networks are poised to become a standard technology in neuroimage analysis. This general purpose framework learns both low-level and high-level features directly from images, making them ideal for image segmentation. <!-- Furthermore, emerging deep learning software is designed for processing large data sets efficiently.  Complemented with the ability to fuse imaging and non-imaging data, these features make deep learning and convolutional networks an integral tool in the future of brain mapping.  --> To highlight the potential of these tools, we present a novel convolutional-deconvolutional network architecture designed for efficient three-dimensional, supervised brain segmentation. We detail the problem definition, network design, evaluation and interpretation underlying this effort.  We also provide evidence that such networks can achieve accuracy in a matter of seconds that rivals what traditional methods may take over an hour to compute.
 
 <!--and provide a comparison with joint label fusion, another state of the art method addressing this problem. -->
 
@@ -154,7 +154,7 @@ We employ R version 3.3.1 ("Bug in Your Hair") as well as Python version 3.5.0. 
 
 ### Hardware
 
-We used NVIDIA K40 GPUs for performing this research which retail between $3-4 thousand. Although training deep neural networks with multiple GPUs at once is a highly active area of research at the moment, we trained each model on only one GPU at a time. Training our models on even a cluster of CPUs would be unfeasible. While the reliance on GPUs is certainly one drawback of deep learning, we note that this can actually be a good thing for the end-user. Once our model is trained, it will almost never need to be altered again. This is in stark contrast to existing models for tissue segmentation, which must learn from scratch to segment each new image they see. This means that with our model, the computational burden falls on us -- the researchers -- who have access to the expensive equipment required for training deep neural networks. This significantly lessens the computational burden on the end-user, who simply has to run our model on their data. Moreover, this means that our model will operate in a deterministic manner by producing the same result each run -- something that will increase reproducibility of results.
+We used NVIDIA K40 GPUs for performing this research which retail between $3-4 thousand. Although training deep neural networks with multiple GPUs at once is a highly active area of research at the moment, we trained each model on only one GPU at a time. Training our models on even a cluster of CPUs would be unfeasible. While the reliance on GPUs is certainly one drawback of deep learning, it may also be interpreted as a good thing for the end-user. Once our model is trained, it will almost never need to be altered again. This is in stark contrast to existing models for tissue segmentation, which must learn from scratch to segment each new image they see. This means that with our model, the computational burden falls on us -- the researchers -- who have access to the expensive equipment required for training deep neural networks. This significantly lessens the computational burden on the end-user, who simply has to run our model on their data. Moreover, this means that our model will operate in a deterministic manner by producing the same result each run -- something that will increase reproducibility of results.
 
 
 # METHODS
@@ -253,7 +253,7 @@ To note, however, we do have a deep learning-based brain extraction algorithm wh
 ## 1. Data Curation Phase
 
 ### 1.1 choosing a dataset
-The DLBS is a well-curated dataset with no apparent failures or highly aberrant subjects.  These data span a broad age range and thus test the ability of the proposed network to perform well in a diverse population (see Figure 1).  Furthermore, the dataset is accompanied by demographics that include age, gender, educational attainment and scores on the mini mental state exam (MMSE).  These additional variables allow a different look at the validity of the ground truth versus network-produced segmentation values, as discussed in Note FIXME.  We provide additional notes on data curation in Note FIXME.
+The DLBS is a well-curated dataset with no apparent failures or highly aberrant subjects. We provide additional notes on data curation in Note 1. These data span a broad age range and thus test the ability of the proposed network to perform well in a diverse population (see Figure 1).  Furthermore, the dataset is accompanied by demographics that include age, gender, educational attainment and scores on the mini mental state exam (MMSE).  These additional variables allow a different look at the validity of the ground truth versus network-produced segmentation values, as discussed in Note 2. 
 
 ### 1.1 split data into training, validation, testing sets
 
@@ -303,11 +303,11 @@ However, as mentioned in a previous section, the classification problem as we pr
 
 Of course, there are many details left out in the above explanation of the convolutional deconvolutional architecture. It suffices to say that for specifically deciding on an instantiation of the general model architecture, we had two main considerations:
 
-* First, we decide how *deep* to make the model. The model depth is measured by how many successive convolutional layers exist in the architecture. With a very deep model, we are able to learn significantly more abstract and non-linear features, but we pay for that added complexity with increased computational cost and a higher risk for the model to simply "memorize" the training data rather than learn generalizable features of brain images -- a problem generally known as <i>over-fitting</i>. Thus, there is a trade-off for model depth, which we found to be optimal at around 3 to 4 convolutional layers. Note that the convolutional layers are transposed and symmetrically added as deconvolutional layers, so 3 convolutional layers corresponds to 3 additional deconvolutional layers and therefore 6 layers in total.
+* First, we decide how *deep* to make the model. The model depth is measured by how many successive convolutional layers exist in the architecture. With a very deep model, we are able to learn significantly more abstract and non-linear features, but we pay for that added complexity with increased computational cost and a higher risk for the model to simply "memorize" the training data rather than learn generalizable features of brain images -- a problem generally known as <i>over-fitting</i>. Thus, there is a trade-off for model depth, which we found to be optimal at around 3 to 4 convolutional layers. The convolutional layers are transposed and symmetrically added as deconvolutional layers, so 3 convolutional layers corresponds to 3 additional deconvolutional layers and therefore 6 layers in total.
 
 * Next, we decide how large to make the convolutional <i>kernels</i>. A kernel, or filter, abstractly corresponds to a local receptive field of a visual neuron. A larger kernel means that more of the image is "seen", but a large receptive field can lead to computational burden and, again, over-fitting. At the same time, a kernel which is too small will lack the ability to identify even local features of the brain such as curves in gray matter or location of small brain structures. For instance, if the convolutional kernel is too small, it will not be able to reliably identify the boundary between skull, CSF, and gray matter. Through experimentation on the training set and evaluation on the validation set, we found that relatively larger kernels worked better. That is, square kernels of size 9x9, 11x11, or 13x13 pixels led to better performing models than those that used kernels of size 3x3 or 5x5 pixels.
 
-\noindent Besides the two main considerations of model depth and kernel size, there are various other hyper-parameters such as kernel stride, average or max pooling, activation functions, L1 and L2 regularization for layer weights and activations, and normalization methods such as batch normalization or dropout.  See Note FIXME for comments on these options (which we do not exploit in this architecture). 
+\noindent Besides the two main considerations of model depth and kernel size, there are various other hyper-parameters such as kernel stride, average or max pooling, activation functions, L1 and L2 regularization for layer weights and activations, and normalization methods such as batch normalization or dropout.  
 
 <!-- These are generally discussed in the <b>Notes</b> section, and are specifically defined in the <b>Glossary</b> section.-->
 
@@ -324,39 +324,39 @@ $$
 where $p(x)$ is the predicted probability distribution over all possible tissue classes for a single voxel and $q(x)$ is the true distribution represented as a one-hot vector with a one in the correct tissue class index and a zero everywhere else. Thus, by minimizing this function the optimization is driving the model to predict the correct class labels while allowing flexibility through use of a probabilistic distribution. 
 <!-- FIXME - in future work we need to write sums over convolutions etc ... -->
 
-In practice, the more confident our class distribution is in its prediction, the better the model performs. Moreover, we can leverage low-confidence class predictions by using an ensemble of different models and hoping that an unsure prediction for one model in a given pixel/voxel will be "saved" by a high-confidence prediction in that same location by another model in the ensemble. A short review of alternative loss functions and problem formulations is provided in Note FIXME.
+In practice, the more confident our class distribution is in its prediction, the better the model performs. Moreover, we can leverage low-confidence class predictions by using an ensemble of different models and hoping that an unsure prediction for one model in a given pixel/voxel will be "saved" by a high-confidence prediction in that same location by another model in the ensemble. 
+
+<!-- A short review of alternative loss functions and problem formulations is provided in Note FIXME. -->
 
 <!--defining the learning problem i.e. $f( x_i ) = y_i$; list some alternatives, explain softmax and why we choose it. -->
 
 ### 2.3 optimizer & initializations
 Training a deep convolutional neural network involves navigating a high dimensional, non-linear, and extremely volatile parameter space filled with numerous local minima. Landing in a local minima is quite easy with a neural network, and when it happens the model performance will almost immediately stop improving. Moreover, a volatile part of the parameter space may cause performance to deteriorate in an unbounded manner. Besides previously mentioned ways for avoiding this scenario, such as appropriate model architecture and good data/augmentation, there are two more important considerations in our model.
 
-First, the choice of optimizer is perhaps the most important factor in determining how well a model will train -- all else equal. Since training proceeds by gradient descent with stochastic mini-batches, it is easy for the model to go wild once it sees a completely new mini-batch. With that in mind, we found that the Adam optimizer is the most well-suited for our architecture. Indeed, the Adam optimizer is probably the most popular optimizer in the current deep learning literature, as it was found to out-perform regular stochastic gradient descent in nearly all cases. <!-- (CITATION) explain Adam optimizer algorithm -->
+First, the choice of optimizer is perhaps the most important factor in determining how well a model will train -- all else equal. Since training proceeds by gradient descent with stochastic mini-batches, it is easy for the model to go wild once it sees a completely new mini-batch. With that in mind, we found that the Adam optimizer is the most well-suited for our architecture. Indeed, the Adam optimizer is probably the most popular optimizer in the current deep learning literature, as it was found to out-perform regular stochastic gradient descent in nearly all cases.  See Note 3 for further comments on the Adam optimizer. <!-- (CITATION) explain Adam optimizer algorithm -->
 
 Additionally, the avoidance of volatile parts of the parameter space can be achieved through clever initialization schemes for the model parameters. The choice of initialization scheme is an enormously under-appreciated factor in the training of deep convolutional networks. For instance, if the model weights are initialized too large, then the final activation map values will explode and the loss value will shoot to infinity. If the model weights are too small, then no gradient will pass back-propagate through the network, leaving the network to simply stand in place and never change. This will also happen if all model weights are  initialized to be very similar values. With that in mind, we chose a well-trusted initialization scheme called the _Xavier Initialization_. <!-- explain xavier initialization formula --> We believe that our choice of optimizer and parameter initialization scheme were vastly important factors in the success of our model to the problem of simultaneous brain extraction and tissue segmentation.
 
 ## 3. Training and Validating the Model - Execution Phase
 
-With the data processed, the sampling scheme laid out, and the model architecture in place, we finally started training our models. The general flow of the execution proceeds by fitting the conv-deconv model on the training data, and once that fitting procedure is complete, we evaluate the model fit on a separate held-out validation dataset.
+With the data processed, the sampling scheme laid out, and the model architecture in place, we finally started training our models. The general flow of the execution proceeds by fitting the conv-deconv model on the training data, and once that fitting procedure is complete, we evaluate the model fit on a separate held-out validation dataset.  If one encounters early failure in this process, it may indicate a bug in coding as discussed in Note 4.
 
 The training procedure consisted of 150 epochs, and for each epoch we sampled 5000 image slices from the subjects in the training set. The image slices were sampled evenly from the subjects, so each subject contributed equally to the model fitting. In order to improve convergence -- and also due to computational constraints -- we fit our model using "mini-batches" of data, using a batch size of 30 image slices. Larger batch sizes allow the model to see more variance in the dataset, but at the cost of larger compute time and a higher risk of falling into sub-par local minima from which the model may never recover. Smaller batch sizes -- usually anything less than 30 -- run faster overall and allow the model to escape from bad local minima, with the risk of finding a worse fit in the long run. We found that anything between 20-30 image slices was a good batch size, as it was fast but still led to a good model fit.
 
 Training time took around 5-15 minutes per epoch, leading to total training time of anywhere from 1 to 2 days. This may seem like a large amount of time, but this is a true benefit of the deep learning paradigm. Once the model is trained, it rarely needs to be updated or trained again. More importantly, predicting on new images is incredibly fast because there is nothing to "learn" from new images. Compare this to traditional approaches, were the segmentation model must start from scratch for each image and the benefit of deep learning approaches becomes clear. 
 
-Training was performed using NVIDIA K20 and K40 GPUs, which represent the state-of-the-art in hardware for training deep neural networks. We note that it would be basically unfeasible to train these models on normal CPU computers, or even CPU clusters, as training a single model instantiation would take on the order of weeks. 
+Training was performed using NVIDIA K20 and K40 GPUs, which represent the state-of-the-art in hardware for training deep neural networks. It would be basically unfeasible to train these models on normal CPU computers, or even CPU clusters, as training a single model instantiation would take on the order of weeks. 
 
 ### 3.1 determining when to stop training
-After each epoch of model training, we evaluate the model on the held-out, unseen validation dataset. This allows us to determine in real-time when our model is finished training. We know that a model is fully trained when the validation loss no longer decreases or even begins to increase. Because of the nature of gradient descent, the complexity of the convolutional neural network framework, and machine learning in general, the training loss will continually decrease until the model has either completely memorized the training set or the complexity of its representation is fully utilized. Thus, seeing that the loss on the held-out validation set is no longer decreasing is a good sign that the generalizability of the model is no longer increasing and we should stop training. 
 
-The goal during training is to maximize the generalizability of the model, without actually memorizing the training set. Of course, another method for avoiding over-fitting is to simply decrease model complexity by decreasing the number of layers or decreasing the number of kernels.  See Note X FIXME for further comments.
-
+The goal during training is to maximize the generalizability of the model, without actually memorizing the training set. After each epoch of model training, we evaluate the model on the held-out, unseen validation dataset. This allows us to determine in real-time when our model is finished training. We know that a model is fully trained when the validation loss no longer decreases or even begins to increase. Because of the nature of gradient descent, the complexity of the convolutional neural network framework, and machine learning in general, the training loss will continually decrease until the model has either completely memorized the training set or the complexity of its representation is fully utilized. Thus, seeing that the loss on the held-out validation set is no longer decreasing is a good sign that the generalizability of the model is no longer increasing and we should stop training. Of course, another method for avoiding over-fitting is to simply decrease model complexity by decreasing the number of layers or decreasing the number of kernels.
 
 ### 3.2 deciding whether to refine the model
 Once the model is finished training, we again test the model on the validation dataset. If we are "happy" with how the model has fit the held-out validation set -- here, by happy, we mean that the segmentation accuracy on unseen images is nearly perfect -- then we finish the execution phase and move onto model testing. However, it is unlikely that the first machine learning model is the optimal model. In that case, we decide to make systematic changes to our model architecture or optimization procedure, and begin the execution (training and validation) procedure all over again. The refinement process is described in the next section.
 
 ## 4. Refining the Model - Refinement Phase
 
-During the refinement process, we generally take clues from how the execution phase went to determine our next steps. 
+During the refinement process, we generally take clues from how the execution phase went to determine our next steps.  There are many useful ideas to guide recent adopters of deep learning in the competitive machine learning market, as covered in Note 5.
 
 ### 4.1 architecture and optimization refinements
 If the training loss was very low but the validation loss was very high, we know that our model over-fit the data by simply memorizing the training set instead of learning generalizable features of brain images. In this case, we decide to decrease model complexity by decreasing the number of layers or decreasing the number of convolutional kernels in each layer. 
@@ -383,7 +383,7 @@ Another method which has gained great traction in the computer vision community 
 
 ## 5. Testing Phase
 
-After the refinement phase ended with our identification of a satisfactory set of models as evaluated on the validation dataset, we then moved on to the testing phase. In this phase, we used our ensemble of 2D slice models to fully segment the brain of each subject in the test set. We note again that the model has never seen the images in the test set, nor have the images in the test set played <i>any</i> part in our decisions to alter model structure in the refinement phase. In this sense, the model performance on the test set represents a true unbiased evaluation of generalizability to new data.
+After the refinement phase ended with our identification of a satisfactory set of models as evaluated on the validation dataset, we then moved on to the testing phase. In this phase, we used our ensemble of 2D slice models to fully segment the brain of each subject in the test set. The model has never seen the images in the test set, nor have the images in the test set played _any_ part in our decisions to alter model structure in the refinement phase. In this sense, the model performance on the test set represents a true unbiased evaluation of generalizability to new data.
 
 The testing phase is important because it allows us to determine whether our model is able to perform well on unseen data. The implications for this are important, since our goal is to build a segmentation model which is not only uncannily fast, but is also able to perform accurately and robustly on brain images it has never seen.
 
@@ -460,7 +460,7 @@ The results are quite promising, given the context:
 
 * we employed a minimal number of deep learning "tricks" -- regularization, data augmentation, etc -- on our model which are universally seen in the state-of-the-art models in computer vision tasks.
 
-\noindent Most importantly, we note that it takes the ensemble of models a total of between 15-20 seconds for a single subject. Since the model is already trained, it will _always_ take between 15-20 seconds for any new images. This is a main benefit of prediction, since if we can prove our model generalizes across datasets, then users will have an accurate and fast segmentation model that will apply to any arbitrary dataset. A characteristic result is in Figure 3. See Note X FIXME for other alternatives to evaluation.
+\noindent Most importantly, the ensemble of models consumes a total of between 15-20 seconds for a single subject. Since the model is already trained, it will _always_ take between 15-20 seconds for new images. This is a main benefit of prediction, since if we can prove our model generalizes across datasets, then users will have an accurate and fast segmentation model that will apply to any arbitrary dataset. A characteristic result is in Figure 3. See Note 2 for other alternatives to evaluation.
 
 In this phase, we asked ourselves what the evaluation results mean for the general viability of this model.  We certainly demonstrated the viability of deep learning models for a complex tissue segmentation task, giving us confidence that this type of model would work for many types of brain image segmentation tasks. Moreover, our model segmented an entire collection of images in the time typical models would take for a single image. We believe that this fact alone points to deep learning models as the future of brain image segmentation. 
 
@@ -487,84 +487,51 @@ singled out for praise by a number of reviewers. Please try and make this sectio
 possible by putting on paper all of your various experiences with the technique. Each ‘Note’
 should be cross-referenced with the ‘Materials’ and ‘Methods’ sections, e.g. (see Note 1). -->
 
-### Note 1: Data curation
+### Note 1
 
 One of the key issues leading to models that do not generalize is a failure to identify training data that accurately represents variability in data at large. To avoid this, one should check any relevant data parameters for outliers.  When dealing with images, it is imperative to *visually inspect* the imaging data and potentially reject non-representative images.
 
-### Note 2: Common design reasons for non-generalizable performance of network
+### Note 2
 
-If the gap between training performance and testing performance ( or testing and validation performance ) is large, this indicates that the model fails to generalize.  Ideally, the cross-validation step would catch this issue ahead of time but there may be instances when cross-validation looks promising but the true evaluation data reveals overfitting.  In this case ...
+We observe that, within the DLBS cohort, there is a reliable relationship between tissue volumes and the MMSE score.  There is also a significant relationship between tissue volumes and age as well as age and MMSE.  A very useful evaluation strategy might use tissue volumes as a surrogate measurement for "neurological age" or "brain age" [@FrankeZieglerKloeppelEtAl2010].  Ideally, the convolutional network output will also reproduce this finding with the *predicted* segmentations.  That is, we can run the same regression model but with the network's segmentations (in testing data) replacing the original ground truth segmentation volumes.  While we do not report these results, the proposed architecture performs well, as expected.
 
+### Note 3
 
-### Note X: 
-
-We also note that training can be heavily affected by the learning rate of the optimizer. The learning rate of the optimizer determines how far of a step to take in the direction of the calculated loss gradient. Too high of a learning rate will cause the model to jump around in the parameter space without ever converging to a solution. A low learning rate, however, will cause the model to stand still. A common method for dealing with this problem is to start with a decently high learning rate and incrementally decrease the learning rate. Typically, the learning rate will have some exponential decay factor which decrease it slowly after each epoch, along with a step function which halves the learning rate after a number of epochs. Thankfully, the Adam optimizer is an <i>adaptive</i> learning rate, so it takes care of the considerations on its own. This is a major benefit over Stochastic Gradient Descent.
-
-### Note X:
-
-We observe that, within the DLBS cohort, there is a reliable relationship between tissue volumes and the MMSE score.  There is also a significant relationship between tissue volumes and age as well as age and MMSE.  Our evaluation will use tissue volumes as a surrogate measurement for "neurological age" or "brain age" [@FrankeZieglerKloeppelEtAl2010].  Ideally, the convolutional network output will also reproduce this finding with the *predicted* segmentations.  That is, we can run the same regression model as that below but with the convolution network's segmentations (in testing data) replacing the original ground truth segmentation volumes. 
+We also note that training can be heavily affected by the learning rate of the optimizer. The learning rate of the optimizer determines how far of a step to take in the direction of the calculated loss gradient. Too high of a learning rate will cause the model to jump around in the parameter space without ever converging to a solution. A low learning rate, however, will cause the model to stand still. A common method for dealing with this problem is to start with a decently high learning rate and incrementally decrease the learning rate. Typically, the learning rate will have some exponential decay factor which decrease it slowly after each epoch, along with a step function which halves the learning rate after a number of epochs. Thankfully, the Adam optimizer is an _adaptive_ learning rate, so it takes care of the considerations on its own. This is a major benefit over Stochastic Gradient Descent.
 
 
-### Note 3: Common software bugs in network implementation
+### Note 4
 
-Until network building and design becomes more automated (inevitably), there remains the possibility of inducing bugs that are not easy to detect but may manifest in poor performance.  
+Until network building and design becomes more automated (inevitably), there remains the possibility of inducing bugs that are not easy to detect but may manifest in poor performance.  Common _naive_ software bugs in network implementation include:
 
-* bad optimizer, bad data or bad loss function
+* bad optimizer, bad data or bad loss function;
   
-* bug in coding ( permuting the data )
+* bug in coding ( permuting the data );
 
 * bug in data translation, e.g. from R to python which use different array indexing.
 
 
-### Note 4: Performance relative to other methods
+### Note 5
 
+Deep learning is popular within the competitive machine learning communities, such as Kaggle.  Exposure to Kaggle competition and ensuing discussions as the competition proceeds (or after they finish) provides a view of machine learning from the practical angle not often covered in academic papers. A few common themes that arise in the competitions include:
 
-* Multiple models and voting if you want to win kaggle (538)
+* nearly all competition winner use multiple models and voting or consensus;
 
-* Benchmark against atropos: Speed/performance
+* it is fairly common for the eventual winner to come from outside the top 10 in the preliminary (training data) leaderboard; this indicates that many teams overfit to the training data which is possible because teams can make many submissions and observe how their scores change with model variations;
 
-* Benchmark against KMeans: Speed/performance
+* data augmentation is a second strategy that is common;
 
-* Benchmark against JLF: Speed/performance
+* finally, winning teams often carefully inspect the input and ground truth data and discover "problems" that may or may not be resolvable; in some cases, challenge organizers fix issues but this is not always feasible as the 'problems' identified by machine learning researchers may indeed represent real variability (or error rate) in human performance.
 
-### Note 5: Deep learning tricks
-
-* dropout
- 
-* approaches to adding coordinate systems
-
-* data augmentation ( rigid, affine, elastic )
-
-* L0/L1 regularization
-
-* hyper-parameter optimization: more complex problems lead to greater parameter complexity
-
-* avoid over-fitting (e.g. early termination)
-
-* find better or more data ( may meet limits of human performance )
-
-* batch optimization parameters wrt GPU or CPU capacity
-
-* issue: mismatch of test and validation data
-
-* issue: unknown nuisance parameters
-
-* issue: balanced sampling of classification sets ( randomized, class-specific, etc - avoid dominance by a single class )
-
-* see kaggle forums for additional details
-
-### Note 6: Batch size may impact performance 
-
-This depends on preprocessing - Expand on this!
 
 \newpage
 
 
-![FIXME caption Three images randomly selected from the DLBS cohort.](`r cohfn`)
+![Three images randomly selected from the DLBS cohort illustrate variability in the training dataset.](`r cohfn`)
 
 \newpage
 
-![FIXME caption figure showing system](`r arfn`)
+![The architecture of the convolutional-deconvolutional network.  This illustration shows only the axial component of the network.  At left we see the input T1-weighted MRI slice.  At far right is the predicted probability maps as well as the final segmentation.  The intermediate convolutional layers (left half of network) learns features whereas the right half of the network decodes these features into the shape of the prediction target (here, a seven class set of spatial probability maps).](`r arfn`)
 
 \newpage
 
@@ -591,7 +558,7 @@ ggplot(cukedf, aes(Dice, fill = Label)) + geom_density(alpha = 0.2) +
 
 \newpage
 
-![FIXME caption A comparison of the ground truth segmentation (center) to the convolution network's output.](`r resfn`)
+![A comparison of the ground truth segmentation (center) to the convolution-deconvolutional network's output (right).  Note that the conv-deconv result both segments and brain extracts in one step.](`r resfn`)
 
 <!-- ![an example of the convolutional network's features](`r ffn`) -->
 
